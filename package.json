@@ -8,6 +8,7 @@
   "author": "Spotify Translator contributors",
   "license": "MIT",
   "scripts": {
+    "postinstall": "node node_modules/electron/install.js",
     "dev": "electron-vite dev",
     "dev:demo": "LYRICLENS_DEMO=1 electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
