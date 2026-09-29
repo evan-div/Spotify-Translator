@@ -1,0 +1,79 @@
+import { OVERLAY_LIMITS } from '@shared/constants/defaults';
+import { formatAccelerator } from '@shared/utils/accelerator';
+import type { OverlaySettings } from '@shared/types/settings';
+import { useAppSelector } from '../../hooks/useAppState';
+import { Button, Group, Row, Segmented, Slider, Toggle } from './controls';
+
+export function OverlaySection() {
+  const overlay = useAppSelector((s) => s.settings.overlay);
+  const shortcuts = useAppSelector((s) => s.settings.shortcuts);
+  const platform = useAppSelector((s) => s.platform);
+  const isMac = platform === 'darwin';
+  const patch = (p: Partial<OverlaySettings>) => void window.lyricLens.updateSettings({ overlay: p });
+
+  return (
+    <>
+      <Group title="Lyrics overlay">
+        <Row label="Appearance">
+          <Segmented
+            value={overlay.theme}
+            options={[
+              { value: 'system', label: 'System' },
+              { value: 'light', label: 'Light' },
+              { value: 'dark', label: 'Dark' },
+            ]}
+            onChange={(theme) => patch({ theme })}
+          />
+        </Row>
+        <Row label="Show">
+          <Segmented
+            value={overlay.displayMode}
+            options={[
+              { value: 'both', label: 'Both' },
+              { value: 'translation', label: 'English' },
+              { value: 'original', label: 'Spanish' },
+            ]}
+            onChange={(displayMode) => patch({ displayMode })}
+          />
+        </Row>
+        <Row label="Text size">
+          <Slider label="Text size" value={overlay.fontSize} min={OVERLAY_LIMITS.fontMin} max={OVERLAY_LIMITS.fontMax} step={1} onChange={(fontSize) => patch({ fontSize })} format={(v) => `${v} pt`} />
+        </Row>
+        <Row label="Opacity">
+          <Slider label="Opacity" value={overlay.opacity} min={OVERLAY_LIMITS.opacityMin} max={OVERLAY_LIMITS.opacityMax} step={0.01} onChange={(opacity) => patch({ opacity })} format={(v) => `${Math.round(v * 100)}%`} />
+        </Row>
+        <Row label="Previous & next lines">
+          <Toggle label="Show previous and next lines" checked={overlay.showContext} onChange={(showContext) => patch({ showContext })} />
+        </Row>
+        <Row label="Album art backdrop" hint="A soft blurred cover behind the lyrics.">
+          <Toggle label="Album art backdrop" checked={overlay.albumArtBackground} onChange={(albumArtBackground) => patch({ albumArtBackground })} />
+        </Row>
+        <Row label="Compact mode" hint="Just the current line.">
+          <Toggle label="Compact mode" checked={overlay.compact} onChange={(compact) => patch({ compact })} />
+        </Row>
+      </Group>
+
+      <Group title="Behavior">
+        <Row label="Lock position" hint="Prevents moving and resizing.">
+          <Toggle label="Lock position" checked={overlay.locked} onChange={(locked) => patch({ locked })} />
+        </Row>
+        <Row label="Click-through" hint={`Mouse clicks pass through to the app underneath. Turn off from the menu bar or with ${formatAccelerator(shortcuts.toggleClickThrough, isMac)}.`}>
+          <Toggle label="Click-through" checked={overlay.clickThrough} onChange={(clickThrough) => patch({ clickThrough })} />
+        </Row>
+        <Row label="Lyric timing" hint="Nudge if lyrics feel early or late.">
+          <Slider label="Lyric timing offset" value={overlay.syncOffsetMs} min={-2000} max={2000} step={50} onChange={(syncOffsetMs) => patch({ syncOffsetMs })} format={(v) => (v === 0 ? 'On time' : `${v > 0 ? '+' : ''}${v} ms`)} />
+        </Row>
+        <Row label="Overlay position">
+          <Button onClick={() => void window.lyricLens.perform('overlay.resetPosition')}>Reset position</Button>
+        </Row>
+      </Group>
+
+      <Group title="Keyboard shortcuts" footer="Global shortcuts work from any app. Customisation is coming in a future version.">
+        <Row label="Show / hide lyrics"><kbd>{formatAccelerator(shortcuts.toggleOverlay, isMac)}</kbd></Row>
+        <Row label="Toggle click-through"><kbd>{formatAccelerator(shortcuts.toggleClickThrough, isMac)}</kbd></Row>
+        <Row label="Larger text"><kbd>{formatAccelerator(shortcuts.increaseFont, isMac)}</kbd></Row>
+        <Row label="Smaller text"><kbd>{formatAccelerator(shortcuts.decreaseFont, isMac)}</kbd></Row>
+      </Group>
+    </>
+  );
+}

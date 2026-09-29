@@ -1,0 +1,20 @@
+export const IPC = {
+  getSnapshot: 'lyriclens:get-snapshot',
+  updateSettings: 'lyriclens:update-settings',
+  perform: 'lyriclens:perform',
+  setTranslationKey: 'lyriclens:set-translation-key',
+  clearTranslationKey: 'lyriclens:clear-translation-key',
+  testTranslation: 'lyriclens:test-translation',
+  demoCommand: 'lyriclens:demo-command',
+  dragStart: 'lyriclens:drag-start',
+  dragMove: 'lyriclens:drag-move',
+  dragEnd: 'lyriclens:drag-end',
+  evt: {
+    playback: 'lyriclens:evt:playback',
+    lyrics: 'lyriclens:evt:lyrics',
+    settings: 'lyriclens:evt:settings',
+    spotify: 'lyriclens:evt:spotify',
+    providers: 'lyriclens:evt:providers',
+    notice: 'lyriclens:evt:notice',
+  },
+} as const;

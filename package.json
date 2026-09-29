@@ -1,0 +1,40 @@
+{
+  "name": "spotify-translator",
+  "productName": "Lyric Lens",
+  "version": "0.1.0",
+  "description": "Floating desktop subtitles that translate the lyrics of the Spotify song you're playing.",
+  "private": true,
+  "main": "./out/main/main.js",
+  "author": "Spotify Translator contributors",
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "dev:demo": "LYRICLENS_DEMO=1 electron-vite dev",
+    "build": "npm run typecheck && electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dist": "npm run build && electron-builder --mac",
+    "dist:dir": "npm run build && electron-builder --mac --dir"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "eslint": "^10.11.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.0",
+    "vite": "^7.3.6",
+    "vitest": "^5.0.2"
+  }
+}

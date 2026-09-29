@@ -1,0 +1,87 @@
+:root {
+  color-scheme: light dark;
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+
+  /* Light */
+  --text: #1d1d1f;
+  --text-2: rgba(29, 29, 31, 0.74);
+  --text-3: rgba(29, 29, 31, 0.5);
+  --translation: rgba(29, 29, 31, 0.8);
+  --panel: rgba(247, 247, 250, 0.62);
+  --panel-solid: rgba(247, 247, 250, 0.9);
+  --surface: rgba(255, 255, 255, 0.62);
+  --surface-hover: rgba(0, 0, 0, 0.05);
+  --hairline: rgba(0, 0, 0, 0.08);
+  --accent: #007aff;
+  --accent-soft: rgba(0, 122, 255, 0.14);
+  --danger: #d70015;
+  --ok: #248a3d;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* Dark: explicit choice, or the system setting when no explicit theme is set. */
+:root[data-theme='dark'] {
+  --text: #f5f5f7;
+  --text-2: rgba(245, 245, 247, 0.76);
+  --text-3: rgba(245, 245, 247, 0.5);
+  --translation: rgba(245, 245, 247, 0.84);
+  --panel: rgba(30, 30, 34, 0.5);
+  --panel-solid: rgba(30, 30, 34, 0.9);
+  --surface: rgba(255, 255, 255, 0.07);
+  --surface-hover: rgba(255, 255, 255, 0.09);
+  --hairline: rgba(255, 255, 255, 0.1);
+  --accent: #0a84ff;
+  --accent-soft: rgba(10, 132, 255, 0.22);
+  --danger: #ff453a;
+  --ok: #30d158;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --text: #f5f5f7;
+    --text-2: rgba(245, 245, 247, 0.76);
+    --text-3: rgba(245, 245, 247, 0.5);
+    --translation: rgba(245, 245, 247, 0.84);
+    --panel: rgba(30, 30, 34, 0.5);
+    --panel-solid: rgba(30, 30, 34, 0.9);
+    --surface: rgba(255, 255, 255, 0.07);
+    --surface-hover: rgba(255, 255, 255, 0.09);
+    --hairline: rgba(255, 255, 255, 0.1);
+    --accent: #0a84ff;
+    --accent-soft: rgba(10, 132, 255, 0.22);
+    --danger: #ff453a;
+    --ok: #30d158;
+    --shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  cursor: default;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
