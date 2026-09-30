@@ -124,7 +124,7 @@ When installed, place `.env` in `~/Library/Application Support/Lyric Lens/`. Not
 | ⌥⇧⌘C | Toggle click-through |
 | ⌥⇧⌘↑ / ⌥⇧⌘↓ | Larger / smaller text |
 
-Shortcuts live in settings (`shortcuts`), so a customisation UI can be added without code changes elsewhere.
+Shortcuts are editable in **Settings → Keyboard shortcuts**: click one, press the new combination (Esc cancels, Delete turns it off, ↺ resets it). A shortcut needs at least two modifier keys (or one plus a function key) so it can never hijack everyday shortcuts like ⌘C. If macOS or another app already owns a combination, the row says so instead of failing silently.
 
 ## Development commands
 
@@ -187,7 +187,6 @@ Key design points:
 - Lyrics coverage depends on LRCLIB. Some songs will have no lyrics or only unsynced lyrics.
 - Only Spanish → English is translated in the MVP (the code is structured for more languages: see `TARGET_LANGUAGES`, `SOURCE_LANGUAGES` and the provider `TranslateOptions`). Portuguese and French are detected so they aren't mis-translated as Spanish, but they are shown untranslated.
 - Language detection is heuristic; a song with very few recognisable words may be classed "unknown". Use **Source language → Spanish** in Settings to force translation.
-- Global shortcuts are not yet user-editable in the UI.
 - The Spotify Web API does not expose lyrics; this app deliberately never touches Spotify's own lyrics UI.
 
 ## API / licensing considerations

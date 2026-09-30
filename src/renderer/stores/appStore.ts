@@ -1,7 +1,7 @@
 import { DEFAULT_SETTINGS } from '@shared/constants/defaults';
 import type { LyricsState, PlaybackState, SpotifyConnectionState } from '@shared/types/domain';
 import type { AppSnapshot, Notice, ProviderStatus } from '@shared/types/ipc';
-import type { AppSettings } from '@shared/types/settings';
+import type { AppSettings, ShortcutStatus } from '@shared/types/settings';
 
 export interface AppState {
   ready: boolean;
@@ -13,6 +13,7 @@ export interface AppState {
   playback: PlaybackState;
   lyrics: LyricsState;
   providers: ProviderStatus;
+  shortcutStatus: ShortcutStatus;
   notice: Notice | null;
 }
 
@@ -31,6 +32,7 @@ const initial: AppState = {
     lyrics: { provider: 'lrclib', label: 'LRCLIB' },
     spotify: { clientIdSource: 'missing', redirectUri: '' },
   },
+  shortcutStatus: { toggleOverlay: 'active', toggleClickThrough: 'active', increaseFont: 'active', decreaseFont: 'active' },
   notice: null,
 };
 
@@ -63,6 +65,7 @@ class AppStore {
       playback: s.playback,
       lyrics: s.lyrics,
       providers: s.providers,
+      shortcutStatus: s.shortcutStatus,
     });
   }
 
@@ -75,6 +78,7 @@ class AppStore {
       api.onSettings((settings) => this.patch({ settings })),
       api.onSpotify((spotify) => this.patch({ spotify })),
       api.onProviders((providers) => this.patch({ providers, demo: providers.demo })),
+      api.onShortcutStatus((shortcutStatus) => this.patch({ shortcutStatus })),
       api.onNotice((notice) => this.patch({ notice })),
     ];
     this.applySnapshot(await api.getSnapshot());

@@ -67,3 +67,9 @@ export type SettingsPatch = {
   translation?: Partial<TranslationSettings>;
   shortcuts?: Partial<ShortcutSettings>;
 };
+
+export type ShortcutAction = keyof ShortcutSettings;
+
+/** Outcome of registering a global shortcut with the OS. */
+export type ShortcutState = 'active' | 'disabled' | 'in-use' | 'duplicate' | 'invalid';
+export type ShortcutStatus = Record<ShortcutAction, ShortcutState>;

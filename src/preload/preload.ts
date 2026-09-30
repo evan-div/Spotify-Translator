@@ -30,6 +30,7 @@ const api: LyricLensApi = {
   onSettings: (cb) => subscribe(IPC.evt.settings, cb),
   onSpotify: (cb) => subscribe(IPC.evt.spotify, cb),
   onProviders: (cb) => subscribe(IPC.evt.providers, cb),
+  onShortcutStatus: (cb) => subscribe(IPC.evt.shortcutStatus, cb),
   onNotice: (cb) => subscribe(IPC.evt.notice, cb),
 };
 

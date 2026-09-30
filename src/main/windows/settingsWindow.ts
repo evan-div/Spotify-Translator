@@ -5,6 +5,8 @@ import { createSecureWindow, isMac, loadRenderer } from './common';
 export class SettingsWindow {
   private window: BrowserWindow | null = null;
 
+  constructor(private readonly onClosed: () => void = () => undefined) {}
+
   async open(): Promise<void> {
     if (this.window && !this.window.isDestroyed()) {
       if (this.window.isMinimized()) this.window.restore();
@@ -39,6 +41,7 @@ export class SettingsWindow {
     });
     window.on('closed', () => {
       this.window = null;
+      this.onClosed();
     });
     await loadRenderer(window, 'settings');
   }

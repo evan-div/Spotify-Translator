@@ -27,7 +27,7 @@ export class Application implements IpcHost {
   private readonly secrets = new SafeStorageSecretStore(join(app.getPath('userData'), 'secrets.json'));
   private readonly controller: AppController;
   private readonly overlay = new OverlayWindow(this.settings);
-  private readonly settingsWindow = new SettingsWindow();
+  private readonly settingsWindow = new SettingsWindow(() => this.publishShortcutStatus(this.shortcuts.resume()));
   private readonly tray = new TrayController((action) => void this.perform(action), isMac);
   private readonly shortcuts = new ShortcutManager({
     toggleOverlay: () => void this.perform('overlay.toggle'),
@@ -63,7 +63,7 @@ export class Application implements IpcHost {
 
     this.tray.create();
     this.refreshTray();
-    this.shortcuts.register(this.settings.get().shortcuts);
+    this.publishShortcutStatus(this.shortcuts.register(this.settings.get().shortcuts));
     this.controller.start();
 
     const { onboardingCompleted } = this.settings.get();
@@ -108,6 +108,7 @@ export class Application implements IpcHost {
       platform: process.platform,
       settings: this.settings.get(),
       ...this.controller.getSnapshot(),
+      shortcutStatus: this.shortcuts.getStatus(),
     };
   }
 
@@ -148,6 +149,12 @@ export class Application implements IpcHost {
         return { ok: true };
       case 'settings.open':
         await this.settingsWindow.open();
+        return { ok: true };
+      case 'shortcuts.suspend':
+        this.shortcuts.suspend();
+        return { ok: true };
+      case 'shortcuts.resume':
+        this.publishShortcutStatus(this.shortcuts.resume());
         return { ok: true };
       case 'app.quit':
         app.quit();
@@ -193,7 +200,7 @@ export class Application implements IpcHost {
         );
       }
     }
-    if (patch.shortcuts) this.shortcuts.register(next.shortcuts);
+    if (patch.shortcuts) this.publishShortcutStatus(this.shortcuts.register(next.shortcuts));
     if (patch.demoMode !== undefined) this.controller.syncMode();
     if (patch.translation || patch.spotifyClientId !== undefined) this.controller.onProviderConfigChanged();
     if (patch.onboardingCompleted && !previous.onboardingCompleted) {
@@ -202,6 +209,10 @@ export class Application implements IpcHost {
 
     this.broadcast(IPC.evt.settings, next);
     this.refreshTray();
+  }
+
+  private publishShortcutStatus(status: ReturnType<ShortcutManager['getStatus']> | null): void {
+    if (status) this.broadcast(IPC.evt.shortcutStatus, status);
   }
 
   private adjustFont(delta: number): void {

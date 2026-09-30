@@ -1,5 +1,6 @@
 import { OVERLAY_LIMITS } from '@shared/constants/defaults';
 import { formatAccelerator } from '@shared/utils/accelerator';
+import { ShortcutsSection } from './ShortcutsSection';
 import type { OverlaySettings } from '@shared/types/settings';
 import { useAppSelector } from '../../hooks/useAppState';
 import { Button, Group, Row, Segmented, Slider, Toggle } from './controls';
@@ -68,12 +69,7 @@ export function OverlaySection() {
         </Row>
       </Group>
 
-      <Group title="Keyboard shortcuts" footer="Global shortcuts work from any app. Customisation is coming in a future version.">
-        <Row label="Show / hide lyrics"><kbd>{formatAccelerator(shortcuts.toggleOverlay, isMac)}</kbd></Row>
-        <Row label="Toggle click-through"><kbd>{formatAccelerator(shortcuts.toggleClickThrough, isMac)}</kbd></Row>
-        <Row label="Larger text"><kbd>{formatAccelerator(shortcuts.increaseFont, isMac)}</kbd></Row>
-        <Row label="Smaller text"><kbd>{formatAccelerator(shortcuts.decreaseFont, isMac)}</kbd></Row>
-      </Group>
+      <ShortcutsSection />
     </>
   );
 }

@@ -94,7 +94,7 @@ export class AppController extends TypedEmitter<ControllerEvents> {
 
   isDemo = (): boolean => this.demoActive;
 
-  getSnapshot(): Omit<AppSnapshot, 'appVersion' | 'platform' | 'settings'> {
+  getSnapshot(): Omit<AppSnapshot, 'appVersion' | 'platform' | 'settings' | 'shortcutStatus'> {
     return {
       demo: this.demoActive,
       spotify: this.bundle.spotify.getConnection(),

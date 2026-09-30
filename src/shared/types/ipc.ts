@@ -3,7 +3,7 @@ import type {
   PlaybackState,
   SpotifyConnectionState,
 } from './domain';
-import type { AppSettings, SettingsPatch, TranslationProviderId } from './settings';
+import type { AppSettings, SettingsPatch, ShortcutStatus, TranslationProviderId } from './settings';
 
 export interface ProviderStatus {
   /** True while the app runs on simulated data. */
@@ -30,6 +30,7 @@ export interface AppSnapshot {
   playback: PlaybackState;
   lyrics: LyricsState;
   providers: ProviderStatus;
+  shortcutStatus: ShortcutStatus;
 }
 
 export type AppAction =
@@ -44,6 +45,8 @@ export type AppAction =
   | 'overlay.toggleClickThrough'
   | 'overlay.resetPosition'
   | 'settings.open'
+  | 'shortcuts.suspend'
+  | 'shortcuts.resume'
   | 'app.quit';
 
 export const APP_ACTIONS: readonly AppAction[] = [
@@ -58,6 +61,8 @@ export const APP_ACTIONS: readonly AppAction[] = [
   'overlay.toggleClickThrough',
   'overlay.resetPosition',
   'settings.open',
+  'shortcuts.suspend',
+  'shortcuts.resume',
   'app.quit',
 ];
 
@@ -101,5 +106,6 @@ export interface LyricLensApi {
   onSettings(cb: (settings: AppSettings) => void): () => void;
   onSpotify(cb: (state: SpotifyConnectionState) => void): () => void;
   onProviders(cb: (providers: ProviderStatus) => void): () => void;
+  onShortcutStatus(cb: (status: ShortcutStatus) => void): () => void;
   onNotice(cb: (notice: Notice) => void): () => void;
 }

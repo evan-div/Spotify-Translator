@@ -15,6 +15,7 @@ export const IPC = {
     settings: 'lyriclens:evt:settings',
     spotify: 'lyriclens:evt:spotify',
     providers: 'lyriclens:evt:providers',
+    shortcutStatus: 'lyriclens:evt:shortcut-status',
     notice: 'lyriclens:evt:notice',
   },
 } as const;

@@ -1,4 +1,5 @@
 import { DEFAULT_SETTINGS, OVERLAY_LIMITS } from '@shared/constants/defaults';
+import { isDisabledAccelerator, validateAccelerator } from '@shared/utils/accelerator';
 import type {
   AppSettings,
   Bounds,
@@ -38,8 +39,6 @@ function parseBounds(v: unknown): Bounds | null | undefined {
   if ([x, y, width, height].some((n) => n === undefined)) return undefined;
   return { x: Math.round(x!), y: Math.round(y!), width: Math.round(width!), height: Math.round(height!) };
 }
-
-const ACCELERATOR_RE = /^[A-Za-z0-9+]+$/;
 
 export function parseSettingsPatch(input: unknown): SettingsPatch {
   if (!isObj(input)) return {};
@@ -89,7 +88,9 @@ export function parseSettingsPatch(input: unknown): SettingsPatch {
     const s = input.shortcuts;
     const accel = (v: unknown) => {
       const value = str(v, 60);
-      return value && ACCELERATOR_RE.test(value) ? value : undefined;
+      if (value === undefined) return undefined;
+      // '' disables the shortcut; anything else must pass the global-shortcut rules.
+      return isDisabledAccelerator(value) || validateAccelerator(value).ok ? value : undefined;
     };
     patch.shortcuts = definedOnly({
       toggleOverlay: accel(s.toggleOverlay),
