@@ -4,7 +4,7 @@ import { IPC } from '@shared/constants/ipc';
 import { OVERLAY_LIMITS } from '@shared/constants/defaults';
 import { formatAccelerator } from '@shared/utils/accelerator';
 import type { AppSettings, SettingsPatch } from '@shared/types/settings';
-import type { ActionResult, AppAction, AppSnapshot, Notice } from '@shared/types/ipc';
+import type { ActionResult, AppAction, AppSnapshot, Notice, SettingsTab } from '@shared/types/ipc';
 import { DEFAULT_REDIRECT_URI, readEnv, type EnvConfig } from '../config/env';
 import { IpcHost, registerIpc } from '../ipc/registerIpc';
 import { createLogger } from '../logger';
@@ -49,7 +49,7 @@ export class Application implements IpcHost {
       env: this.env,
       redirectUri,
       createLiveBundle: () =>
-        createLiveBundle({ env: this.env, settings: this.settings, secrets: this.secrets, cacheDirectory, redirectUri }),
+        createLiveBundle({ env: this.env, settings: this.settings, secrets: this.secrets, cacheDirectory, dataDirectory: app.getPath('userData'), redirectUri }),
       createDemoBundle,
     });
   }
@@ -86,6 +86,7 @@ export class Application implements IpcHost {
     this.quitting = true;
     this.shortcuts.unregister();
     this.controller.stop();
+    this.controller.flush();
     this.stopIpc?.();
     this.settings.flush();
     this.tray.destroy();
@@ -150,6 +151,12 @@ export class Application implements IpcHost {
       case 'settings.open':
         await this.settingsWindow.open();
         return { ok: true };
+      case 'settings.openVocabulary':
+        await this.openSettingsTab('vocabulary');
+        return { ok: true };
+      case 'settings.openHistory':
+        await this.openSettingsTab('history');
+        return { ok: true };
       case 'shortcuts.suspend':
         this.shortcuts.suspend();
         return { ok: true };
@@ -163,6 +170,13 @@ export class Application implements IpcHost {
   }
 
   dragOverlay = (phase: 'start' | 'move' | 'end', dx?: number, dy?: number): void => this.overlay.drag(phase, dx, dy);
+  lookupWord = (request: Parameters<AppController['lookupWord']>[0]) => this.controller.lookupWord(request);
+  saveWord = (request: Parameters<AppController['saveWord']>[0]) => this.controller.saveWord(request);
+  removeWord = (id: string) => this.controller.removeWord(id);
+  setFavorite = (trackKey: string, favorite: boolean) => this.controller.setFavorite(trackKey, favorite);
+  removeHistory = (trackKey: string) => this.controller.removeHistory(trackKey);
+  clearHistory = () => this.controller.clearHistory();
+  getSongLyrics = (trackKey: string) => this.controller.getSongLyrics(trackKey);
   setTranslationApiKey = (key: string) => this.controller.setTranslationApiKey(key);
   clearTranslationApiKey = () => this.controller.clearTranslationApiKey();
   testTranslation = () => this.controller.testTranslation();
@@ -181,6 +195,7 @@ export class Application implements IpcHost {
       this.refreshTray();
     });
     this.controller.on('providers', (p) => this.broadcast(IPC.evt.providers, p));
+    this.controller.on('library', (l) => this.broadcast(IPC.evt.library, l));
     this.settings.onChange((next, patch) => this.onSettingsChanged(next, patch));
   }
 
@@ -209,6 +224,13 @@ export class Application implements IpcHost {
 
     this.broadcast(IPC.evt.settings, next);
     this.refreshTray();
+  }
+
+  /** Opens Settings on a given tab (a hash for a fresh window, an event for one that's already open). */
+  private async openSettingsTab(tab: SettingsTab): Promise<void> {
+    const wasOpen = this.settingsWindow.browserWindow !== null;
+    await this.settingsWindow.open(tab);
+    if (wasOpen) this.broadcast(IPC.evt.navigate, tab);
   }
 
   private publishShortcutStatus(status: ReturnType<ShortcutManager['getStatus']> | null): void {

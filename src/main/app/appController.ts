@@ -1,15 +1,16 @@
-import type {
-  LyricsState,
-  PlaybackState,
-  SpotifyConnectionState,
-} from '@shared/types/domain';
+import type { LyricsState, LyricsView, PlaybackState, SpotifyConnectionState } from '@shared/types/domain';
+import type { LibraryState, WordLookupResult, WordSaveRequest } from '@shared/types/library';
+import { normalizeWord } from '@shared/utils/words';
 import type { ActionResult, AppSnapshot, DemoCommand, ProviderStatus } from '@shared/types/ipc';
 import { TypedEmitter } from '@shared/utils/emitter';
 import { detectTrackChange, playbackIdentity } from '@shared/utils/trackChange';
 import type { EnvConfig } from '../config/env';
 import { describeError } from '../errors';
 import { createLogger } from '../logger';
+import { translationCacheKey } from '../cache/cacheKeys';
+import { analyzeLyrics } from '@shared/utils/language';
 import { LyricsPipeline } from '../pipeline/lyricsPipeline';
+import { viewFromLyrics, viewFromTranslation } from '../pipeline/views';
 import { IDLE_PLAYBACK } from '../spotify/SpotifyService';
 import type { SecretStore } from '../storage/secrets';
 import type { SettingsStore } from '../storage/settingsStore';
@@ -24,6 +25,7 @@ export interface ControllerEvents extends Record<string, unknown> {
   lyrics: LyricsState;
   connection: SpotifyConnectionState;
   providers: ProviderStatus;
+  library: LibraryState;
 }
 
 export interface ControllerDeps {
@@ -51,6 +53,8 @@ export class AppController extends TypedEmitter<ControllerEvents> {
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private retryAttempt = 0;
   private demoActive: boolean;
+  /** Track already written to history for the current listen (so pauses/refreshes don't recount). */
+  private recordedKey: string | null = null;
 
   constructor(private readonly deps: ControllerDeps) {
     super();
@@ -64,6 +68,12 @@ export class AppController extends TypedEmitter<ControllerEvents> {
   start(): void {
     this.attach();
     this.bundle.spotify.start();
+  }
+
+  /** Writes pending library changes to disk (call before quitting). */
+  flush(): void {
+    this.bundle.vocabulary.flush();
+    this.bundle.history.flush();
   }
 
   stop(): void {
@@ -87,6 +97,8 @@ export class AppController extends TypedEmitter<ControllerEvents> {
     this.setLyrics({ status: 'idle' });
     this.emit('playback', this.playback);
     this.emit('providers', this.getProviderStatus());
+    this.emit('library', this.getLibrary());
+    this.recordedKey = null;
     this.start();
   }
 
@@ -96,6 +108,7 @@ export class AppController extends TypedEmitter<ControllerEvents> {
 
   getSnapshot(): Omit<AppSnapshot, 'appVersion' | 'platform' | 'settings' | 'shortcutStatus'> {
     return {
+      library: this.getLibrary(),
       demo: this.demoActive,
       spotify: this.bundle.spotify.getConnection(),
       playback: this.playback,
@@ -197,6 +210,78 @@ export class AppController extends TypedEmitter<ControllerEvents> {
     }
   }
 
+  /* ---------------- library: words, history, favourites ---------------- */
+
+  getLibrary(): LibraryState {
+    return { vocabulary: this.bundle.vocabulary.list(), history: this.bundle.history.list() };
+  }
+
+  async lookupWord(request: WordSaveRequest): Promise<WordLookupResult> {
+    const word = normalizeWord(request.word);
+    if (!word) return { status: 'not-found', word: request.word, saved: false };
+    const saved = this.bundle.vocabulary.has(word);
+    try {
+      const definition = await this.bundle.dictionary.define(word);
+      return definition ? { status: 'found', definition, saved } : { status: 'not-found', word, saved };
+    } catch (error) {
+      log.warn(`Lookup failed for "${word}"`, error);
+      return { status: 'error', word, message: describeError(error, 'the dictionary'), saved };
+    }
+  }
+
+  async saveWord(request: WordSaveRequest): Promise<ActionResult> {
+    const word = normalizeWord(request.word);
+    const track = this.playback.track;
+    if (!word || !track) return { ok: false, message: 'Nothing to save.' };
+    let definition = null;
+    try {
+      definition = await this.bundle.dictionary.define(word);
+    } catch (error) {
+      // Saving still works offline; the meaning can be looked up again later.
+      log.warn(`Saving "${word}" without a definition`, error);
+    }
+    this.bundle.vocabulary.save(definition, word, {
+      line: request.line.slice(0, 300),
+      translation: request.translation?.slice(0, 300) ?? null,
+      trackKey: track.key,
+      title: track.title,
+      artist: track.artists.join(', '),
+    });
+    return { ok: true };
+  }
+
+  removeWord(id: string): ActionResult {
+    this.bundle.vocabulary.remove(id);
+    return { ok: true };
+  }
+
+  setFavorite(trackKey: string, favorite: boolean): ActionResult {
+    const track = this.playback.track?.key === trackKey ? this.playback.track : null;
+    this.bundle.history.setFavorite(track, trackKey, favorite);
+    return { ok: true };
+  }
+
+  removeHistory(trackKey: string): ActionResult {
+    this.bundle.history.remove(trackKey);
+    return { ok: true };
+  }
+
+  clearHistory(): ActionResult {
+    this.bundle.history.clear();
+    return { ok: true };
+  }
+
+  /** Reads a past song from the caches (translation first, then plain lyrics), without any network. */
+  getSongLyrics(trackKey: string): LyricsView | null {
+    const entry = this.bundle.history.get(trackKey);
+    if (!entry) return null;
+    const query = { trackKey, title: entry.title, artists: entry.artists, album: entry.album, durationMs: 0 };
+    const translation = this.bundle.translations.get(translationCacheKey(query, this.deps.settings.get().translation.targetLanguage));
+    if (translation) return viewFromTranslation(translation, true);
+    const lyrics = this.bundle.lyricsCache.get(`lyrics:${trackKey}`);
+    return lyrics ? { ...viewFromLyrics(lyrics, analyzeLyrics(lyrics.lines), 'not-needed', true), note: null } : null;
+  }
+
   /* ---------------- internals ---------------- */
 
   private wantsDemo(): boolean {
@@ -218,6 +303,8 @@ export class AppController extends TypedEmitter<ControllerEvents> {
     this.unsubscribe.push(
       spotify.on('playback', (p) => this.handlePlayback(p)),
       spotify.on('connection', (c) => this.emit('connection', c)),
+      this.bundle.vocabulary.on('change', () => this.emit('library', this.getLibrary())),
+      this.bundle.history.on('change', () => this.emit('library', this.getLibrary())),
     );
   }
 
@@ -227,6 +314,7 @@ export class AppController extends TypedEmitter<ControllerEvents> {
     this.playback = next;
     if (change.changed) {
       this.identity = change.to;
+      this.recordedKey = null;
       this.onTrackChanged(next);
     }
     this.emit('playback', next);
@@ -279,7 +367,17 @@ export class AppController extends TypedEmitter<ControllerEvents> {
 
   private setLyrics(state: LyricsState): void {
     this.lyricsState = state;
+    this.recordHistory(state);
     this.emit('lyrics', state);
+  }
+
+  /** Adds the song to history once per listen, when its lyrics are actually shown. */
+  private recordHistory(state: LyricsState): void {
+    if (state.status !== 'ready' || !this.deps.settings.get().library.recordHistory) return;
+    const track = this.playback.track;
+    if (!track || track.key !== state.trackKey) return;
+    this.bundle.history.recordPlay(track, state.view, this.recordedKey !== track.key);
+    this.recordedKey = track.key;
   }
 }
 

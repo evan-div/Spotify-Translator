@@ -15,7 +15,11 @@ export type IconName =
   | 'mic'
   | 'globe'
   | 'check'
-  | 'context';
+  | 'context'
+  | 'star'
+  | 'trash'
+  | 'close'
+  | 'book';
 
 const PATHS: Record<IconName, string> = {
   lock: 'M7 11V8a5 5 0 0 1 10 0v3M6 11h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z',
@@ -33,6 +37,10 @@ const PATHS: Record<IconName, string> = {
   mic: 'M12 15a3 3 0 0 0 3-3V7a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zM6 11.5a6 6 0 0 0 12 0M12 17.5V21',
   globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3.5 9h17M3.5 15h17M12 3c2.5 2.7 3.5 5.7 3.5 9s-1 6.3-3.5 9c-2.5-2.7-3.5-5.7-3.5-9S9.5 5.7 12 3z',
   check: 'M5 12.5l4.5 4.5L19 7.5',
+  star: 'M12 3.6l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.8 1-5.8-4.3-4.1 5.9-.9L12 3.6z',
+  trash: 'M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12M10 11v5M14 11v5',
+  close: 'M6 6l12 12M18 6L6 18',
+  book: 'M5 4.5h9a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3V4.5zM17 8h2v12h-2M8 9h6',
 };
 
 interface Props extends Omit<SVGProps<SVGSVGElement>, 'name'> {

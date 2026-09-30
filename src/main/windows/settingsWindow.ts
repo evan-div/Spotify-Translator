@@ -1,4 +1,5 @@
 import { BrowserWindow } from 'electron';
+import type { SettingsTab } from '@shared/types/ipc';
 import { createSecureWindow, isMac, loadRenderer } from './common';
 
 /** The small settings / onboarding window. At most one exists at a time. */
@@ -7,7 +8,7 @@ export class SettingsWindow {
 
   constructor(private readonly onClosed: () => void = () => undefined) {}
 
-  async open(): Promise<void> {
+  async open(tab: SettingsTab = 'settings'): Promise<void> {
     if (this.window && !this.window.isDestroyed()) {
       if (this.window.isMinimized()) this.window.restore();
       this.window.show();
@@ -43,7 +44,7 @@ export class SettingsWindow {
       this.window = null;
       this.onClosed();
     });
-    await loadRenderer(window, 'settings');
+    await loadRenderer(window, 'settings', tab === 'settings' ? undefined : tab);
   }
 
   get browserWindow(): BrowserWindow | null {

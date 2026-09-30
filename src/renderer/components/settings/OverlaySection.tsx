@@ -9,6 +9,7 @@ export function OverlaySection() {
   const overlay = useAppSelector((s) => s.settings.overlay);
   const shortcuts = useAppSelector((s) => s.settings.shortcuts);
   const platform = useAppSelector((s) => s.platform);
+  const recordHistory = useAppSelector((s) => s.settings.library.recordHistory);
   const isMac = platform === 'darwin';
   const patch = (p: Partial<OverlaySettings>) => void window.lyricLens.updateSettings({ overlay: p });
 
@@ -60,6 +61,12 @@ export function OverlaySection() {
         </Row>
         <Row label="Click-through" hint={`Mouse clicks pass through to the app underneath. Turn off from the menu bar or with ${formatAccelerator(shortcuts.toggleClickThrough, isMac)}.`}>
           <Toggle label="Click-through" checked={overlay.clickThrough} onChange={(clickThrough) => patch({ clickThrough })} />
+        </Row>
+        <Row label="Tap words for definitions" hint="Click a Spanish word in the overlay to see what it means and save it.">
+          <Toggle label="Tap words for definitions" checked={overlay.tapWords} onChange={(tapWords) => patch({ tapWords })} />
+        </Row>
+        <Row label="Remember listening history" hint="Keeps a list of songs on this Mac so you can revisit them and mark favorites.">
+          <Toggle label="Remember listening history" checked={recordHistory} onChange={(value) => void window.lyricLens.updateSettings({ library: { recordHistory: value } })} />
         </Row>
         <Row label="Lyric timing" hint="Nudge if lyrics feel early or late.">
           <Slider label="Lyric timing offset" value={overlay.syncOffsetMs} min={-2000} max={2000} step={50} onChange={(syncOffsetMs) => patch({ syncOffsetMs })} format={(v) => (v === 0 ? 'On time' : `${v > 0 ? '+' : ''}${v} ms`)} />

@@ -2,6 +2,11 @@ import { join } from 'node:path';
 import { shell } from 'electron';
 import type { EnvConfig } from '../config/env';
 import { createDiskCaches, createMemoryCaches, type LyricsCache, type TranslationCache } from '../cache/caches';
+import { DemoDictionaryProvider } from '../demo/demoDictionary';
+import { DictionaryService } from '../dictionary/dictionaryService';
+import { WiktionaryProvider } from '../dictionary/wiktionaryProvider';
+import { HistoryStore } from '../library/historyStore';
+import { VocabularyStore } from '../library/vocabularyStore';
 import { DemoLyricsProvider, DemoSpotifyService, DemoTranslationProvider } from '../demo/demoServices';
 import { LrclibProvider } from '../lyrics/lrclibProvider';
 import type { LyricsProvider } from '../lyrics/LyricsProvider';
@@ -22,6 +27,9 @@ export interface ServiceBundle {
   translations: TranslationCache;
   lyricsCache: LyricsCache;
   getTranslationProvider: () => TranslationProvider | null;
+  dictionary: DictionaryService;
+  vocabulary: VocabularyStore;
+  history: HistoryStore;
   lyricsLabel: string;
   demo: DemoSpotifyService | null;
 }
@@ -31,6 +39,8 @@ export interface LiveContext {
   settings: SettingsStore;
   secrets: SecretStore;
   cacheDirectory: string;
+  /** Where vocabulary.json and history.json live (the user-data folder). */
+  dataDirectory: string;
   redirectUri: string;
 }
 
@@ -52,13 +62,17 @@ export function createLiveBundle(ctx: LiveContext): ServiceBundle {
     openExternal: (url) => shell.openExternal(url),
   });
   const providers = createLyricsProviders(ctx.env);
+  const getTranslationProvider = () =>
+    createTranslationProvider(resolveTranslationConfig(ctx.settings.get(), ctx.env, ctx.secrets));
   return {
     spotify: new RealSpotifyService(auth, new SpotifyClient(auth)),
     lyrics: new LyricsService(providers, caches.lyrics),
     translations: caches.translations,
     lyricsCache: caches.lyrics,
-    getTranslationProvider: () =>
-      createTranslationProvider(resolveTranslationConfig(ctx.settings.get(), ctx.env, ctx.secrets)),
+    getTranslationProvider,
+    dictionary: new DictionaryService([new WiktionaryProvider()], caches.definitions, getTranslationProvider),
+    vocabulary: new VocabularyStore(join(ctx.dataDirectory, 'vocabulary.json')),
+    history: new HistoryStore(join(ctx.dataDirectory, 'history.json')),
     lyricsLabel: providers.map((p) => p.displayName).join(' + '),
     demo: null,
   };
@@ -75,6 +89,9 @@ export function createDemoBundle(): ServiceBundle {
     translations: caches.translations,
     lyricsCache: caches.lyrics,
     getTranslationProvider: () => translator,
+    dictionary: new DictionaryService([new DemoDictionaryProvider()], caches.definitions, () => null),
+    vocabulary: new VocabularyStore(null),
+    history: new HistoryStore(null),
     lyricsLabel: 'Demo lyrics',
     demo,
   };

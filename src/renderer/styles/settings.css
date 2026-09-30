@@ -267,6 +267,7 @@ kbd {
   font-weight: 550;
   color: var(--text-2);
   cursor: pointer;
+  white-space: nowrap;
 }
 .segmented__item[aria-checked='true'] {
   background: var(--panel-solid);
@@ -455,4 +456,219 @@ kbd {
 }
 .link--plain {
   font-family: var(--font);
+}
+
+/* ---- tabs, lists (vocabulary + history) ---- */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 20px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--surface-hover);
+}
+.tabs__item {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.tabs__item[aria-selected='true'] {
+  background: var(--panel-solid);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+.tabs__count {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.text-faint {
+  color: var(--text-3);
+}
+.item {
+  padding: 10px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.item + .item {
+  border-top: 1px solid var(--hairline);
+}
+.item__main {
+  min-width: 0;
+  flex: 1;
+}
+.item__title {
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.005em;
+}
+.item__lemma {
+  font-weight: 500;
+  color: var(--text-2);
+}
+.item__meaning {
+  margin-top: 1px;
+  color: var(--text-2);
+  user-select: text;
+  -webkit-user-select: text;
+}
+.item__context {
+  margin-top: 4px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-2);
+  user-select: text;
+  -webkit-user-select: text;
+}
+.item__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 11.5px;
+}
+.item__side {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+}
+.chip {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-3);
+  vertical-align: 1px;
+}
+.item__meta .chip {
+  margin-left: 0;
+}
+.chip--accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--text-3);
+  cursor: pointer;
+}
+.icon-button:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.icon-button--star.is-on {
+  color: #ff9f0a;
+}
+
+.item--song {
+  display: block;
+  padding: 0;
+}
+.item__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px 9px 10px;
+}
+.item__hit {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.art {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--surface-hover);
+}
+.art--empty {
+  display: grid;
+  place-items: center;
+  color: var(--text-3);
+}
+.song-lyrics {
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 4px 16px 16px 65px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.song-lyrics__pair {
+  padding: 3px 0;
+  font-weight: 600;
+}
+.song-lyrics__translation {
+  font-weight: 450;
+  color: var(--text-2);
+}
+.song-lyrics__break {
+  height: 9px;
+}
+.tab-empty {
+  padding: 48px 24px;
+  text-align: center;
+}
+.tab-empty__icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-2);
+}
+.tab-empty h2 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+.tab-empty p {
+  margin: 0 auto;
+  max-width: 330px;
+  color: var(--text-3);
 }

@@ -124,6 +124,8 @@ export type TranslationStatus =
 export interface DisplayLine {
   text: string;
   translation: string | null;
+  /** Detected language of the original line; the UI only offers word lookup for non-English lines. */
+  language?: LineLanguage;
   startTimeMs?: number;
   endTimeMs?: number;
 }

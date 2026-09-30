@@ -6,6 +6,9 @@ interface Props {
   overlay: OverlaySettings;
   onPatch: (patch: Partial<OverlaySettings>) => void;
   onOpenSettings: () => void;
+  /** null = nothing favouritable is playing. */
+  favorite: boolean | null;
+  onToggleFavorite: () => void;
 }
 
 const MODE_ORDER: DisplayMode[] = ['both', 'translation', 'original'];
@@ -17,7 +20,7 @@ const MODE_TITLE: Record<DisplayMode, string> = {
 };
 
 /** Hover-revealed controls. Deliberately not a player: no play/skip/volume. */
-export function OverlayToolbar({ overlay, onPatch, onOpenSettings }: Props) {
+export function OverlayToolbar({ overlay, onPatch, onOpenSettings, favorite, onToggleFavorite }: Props) {
   const nextMode = MODE_ORDER[(MODE_ORDER.indexOf(overlay.displayMode) + 1) % MODE_ORDER.length] ?? 'both';
   const font = (delta: number) =>
     onPatch({ fontSize: Math.min(OVERLAY_LIMITS.fontMax, Math.max(OVERLAY_LIMITS.fontMin, overlay.fontSize + delta)) });
@@ -44,6 +47,14 @@ export function OverlayToolbar({ overlay, onPatch, onOpenSettings }: Props) {
       <button type="button" title="Click-through mode (turn off from the menu bar)" aria-pressed={overlay.clickThrough} onClick={() => onPatch({ clickThrough: !overlay.clickThrough })} className="tool">
         <Icon name="pointer" />
       </button>
+      {favorite !== null && (
+        <>
+          <span className="toolbar__sep" />
+          <button type="button" title={favorite ? 'Remove from favorites' : 'Add to favorites'} aria-pressed={favorite} onClick={onToggleFavorite} className="tool tool--star">
+            <Icon name="star" fill={favorite ? 'currentColor' : 'none'} />
+          </button>
+        </>
+      )}
       <span className="toolbar__sep" />
       <button type="button" title="Settings" onClick={onOpenSettings} className="tool">
         <Icon name="gear" />

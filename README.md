@@ -14,6 +14,10 @@ Captured from demo mode (`npm run dev:demo`) on Linux, so macOS vibrancy blur is
 | --- | --- | --- |
 | ![Synced lyrics](docs/screenshots/overlay.png) | ![Dark with album art backdrop](docs/screenshots/overlay-dark-art.png) | ![Compact mode](docs/screenshots/compact.png) |
 
+| Tap a word | Vocabulary | History |
+| --- | --- | --- |
+| ![Word definition](docs/screenshots/word-definition.png) | ![Vocabulary](docs/screenshots/vocabulary.png) | ![History](docs/screenshots/history.png) |
+
 | Unsynced lyrics | Onboarding | Settings |
 | --- | --- | --- |
 | ![Unsynced lyrics](docs/screenshots/unsynced.png) | ![Onboarding](docs/screenshots/onboarding.png) | ![Settings](docs/screenshots/settings.png) |
@@ -26,6 +30,8 @@ Captured from demo mode (`npm run dev:demo`) on Linux, so macOS vibrancy blur is
 - Translation providers behind an interface: **DeepL**, **Google Cloud Translation**, or any **OpenAI-compatible** LLM endpoint.
 - Caches translations and lyrics on disk: replaying a song never re-translates.
 - Floating overlay: always on top (even over full-screen apps), draggable, resizable, adjustable opacity and font size, light/dark/system theme, compact mode, lock position, click-through, optional blurred album-art backdrop.
+- **Tap a word** in the overlay for its meaning (dictionary form for conjugations, e.g. *quiero → querer*), and **save it to your vocabulary** with a star. Export the list as CSV for Anki, Quizlet or a spreadsheet.
+- **History & favorites:** every song you've read lyrics for is remembered on your Mac. Reopen its lyrics and translation any time, favorite songs with the ★ in the overlay, and clear history without losing favorites.
 - Menu bar app with global shortcuts; no Dock icon.
 - **Demo mode** with simulated playback, lyrics and translations, so you can try everything with no accounts.
 
@@ -113,8 +119,11 @@ When installed, place `.env` in `~/Library/Application Support/Lyric Lens/`. Not
 
 ## Using the app
 
-- **Menu bar icon:** Show/Hide Lyrics, Lock Overlay, Click-Through Mode, Reset Position, Settings, Connect/Reconnect Spotify, Refresh Current Song, Quit.
+- **Menu bar icon:** Show/Hide Lyrics, Lock Overlay, Click-Through Mode, Reset Position, Vocabulary, History & Favorites, Settings, Connect/Reconnect Spotify, Refresh Current Song, Quit.
 - **Hover the overlay** to reveal controls: text size, Spanish/English/both, compact mode, lock, click-through, settings, hide. Drag anywhere to move; drag the edges to resize.
+- **Tap any Spanish word** to open a small definition card over the lyrics. Tap ★ on the card to save the word (saved words are underlined in later lyrics); tap empty space to dismiss it. Dragging the overlay still works: a click and a drag are told apart by movement. Turn this off in Settings → Behavior if you prefer.
+- **Vocabulary** (menu bar or Settings → Vocabulary) lists saved words with the lyric line and song each came from, with search and *Export CSV*.
+- **History** (menu bar or Settings → History) lists songs you've listened to with lyrics; click one to read the cached lyrics and translation, ★ to favorite, 🗑 to remove. *Clear history* keeps favorites. You can turn history off in Settings → Behavior.
 - **Click-through** lets clicks pass to the app underneath. To turn it off: menu bar → *Click-Through Mode*, or the shortcut below.
 - **Refresh Current Song** re-fetches lyrics and re-translates, bypassing caches (useful if a match was wrong).
 
@@ -160,6 +169,8 @@ src/
   main/        Electron main process (Node)
     app/         AppController (playback → lyrics → translation flow), Application (composition root), service bundles
     spotify/     SpotifyService interface, PKCE auth + loopback callback, API client, adaptive polling
+    dictionary/  DictionaryProvider interface, Wiktionary implementation, DictionaryService (cache, dictionary-form lookup, machine fallback)
+    library/     VocabularyStore and HistoryStore (JSON files; favorites are never pruned)
     lyrics/      LyricsProvider interface, LRCLIB implementation, candidate matching, LyricsService
     translation/ TranslationProvider interface, DeepL / Google / OpenAI-compatible, provider factory
     pipeline/    LyricsPipeline: cache → lyrics → detect → translate → cache (cancellable)
@@ -184,6 +195,7 @@ Key design points:
 
 - Developed and tested in a Linux sandbox (real Electron under Xvfb, unit tests, demo mode). **macOS-specific visuals (vibrancy, rounded corners, tray template icon, full-screen overlay behaviour) and the live Spotify / DeepL / Google / OpenAI calls have not been verified against real services.** Expect small fixes on first real-world use.
 - Spotify's Web API reports progress with a few hundred ms of jitter; use **Settings → Lyric timing** to nudge if lyrics feel early or late.
+- Word definitions come from [Wiktionary](https://en.wiktionary.org)'s REST API (free, no key; content is CC BY-SA). Slang, names and some conjugations may be missing; if you've configured a translation provider, those words fall back to a short machine translation clearly marked *approximate*. The Wiktionary integration was built against its documented response format and tested with stubbed responses, but not against the live service.
 - Lyrics coverage depends on LRCLIB. Some songs will have no lyrics or only unsynced lyrics.
 - Only Spanish → English is translated in the MVP (the code is structured for more languages: see `TARGET_LANGUAGES`, `SOURCE_LANGUAGES` and the provider `TranslateOptions`). Portuguese and French are detected so they aren't mis-translated as Spanish, but they are shown untranslated.
 - Language detection is heuristic; a song with very few recognisable words may be classed "unknown". Use **Source language → Spanish** in Settings to force translation.
@@ -212,7 +224,7 @@ Key design points:
 | Overlay off-screen after changing monitors | Menu bar → Reset Overlay Position. |
 | Something odd | Logs are in `~/Library/Application Support/Lyric Lens/logs/main.log`. Run with `LOG_LEVEL=debug`. |
 
-To clear caches, delete `~/Library/Application Support/Lyric Lens/cache/`.
+To clear caches, delete `~/Library/Application Support/Lyric Lens/cache/`. Your vocabulary and history live in `vocabulary.json` and `history.json` in the same folder (they are separate from the caches, so clearing caches never deletes them).
 
 ## Future ideas
 

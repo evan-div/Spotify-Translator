@@ -29,6 +29,13 @@ export interface OverlaySettings {
   heights: { regular: number; compact: number };
   /** Shifts lyric timing (positive = lyrics appear later). */
   syncOffsetMs: number;
+  /** Tap a Spanish word in the overlay to see its definition. */
+  tapWords: boolean;
+}
+
+export interface LibrarySettings {
+  /** Remember songs you've listened to (stored only on this Mac). */
+  recordHistory: boolean;
 }
 
 export interface TranslationSettings {
@@ -57,6 +64,7 @@ export interface AppSettings {
   overlay: OverlaySettings;
   translation: TranslationSettings;
   shortcuts: ShortcutSettings;
+  library: LibrarySettings;
 }
 
 export type SettingsPatch = {
@@ -66,6 +74,7 @@ export type SettingsPatch = {
   overlay?: Partial<OverlaySettings>;
   translation?: Partial<TranslationSettings>;
   shortcuts?: Partial<ShortcutSettings>;
+  library?: Partial<LibrarySettings>;
 };
 
 export type ShortcutAction = keyof ShortcutSettings;

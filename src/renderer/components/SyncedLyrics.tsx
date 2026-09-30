@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { LyricsView } from '@shared/types/domain';
 import { focusRank, rankLines, type DisplayModeSetting } from '../hooks/overlayContent';
 import { LyricLine, type LineState } from './LyricLine';
+import type { TapConfig } from './TappableText';
 
 interface Props {
   view: LyricsView;
@@ -10,13 +11,14 @@ interface Props {
   showContext: boolean;
   translating: boolean;
   fontSize: number;
+  tap: TapConfig | null;
 }
 
 /**
  * Apple-Music style lyric scroller: every line is in the DOM, the list is translated so the active
  * line sits at the vertical centre, and distance from the active line drives opacity/scale.
  */
-export function SyncedLyrics({ view, activeIndex, mode, showContext, translating, fontSize }: Props) {
+export function SyncedLyrics({ view, activeIndex, mode, showContext, translating, fontSize, tap }: Props) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLDivElement>(null);
   const firstRef = useRef<HTMLDivElement>(null);
@@ -58,11 +60,13 @@ export function SyncedLyrics({ view, activeIndex, mode, showContext, translating
               <LyricLine
                 text={line.text}
                 translation={line.translation}
+                language={line.language}
                 state={state}
                 direction={direction}
                 mode={mode}
                 pending={translating}
                 blank={isBlank}
+                tap={tap}
               />
             </div>
           );

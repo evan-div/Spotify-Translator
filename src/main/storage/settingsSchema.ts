@@ -69,6 +69,7 @@ export function parseSettingsPatch(input: unknown): SettingsPatch {
       albumArtBackground: bool(o.albumArtBackground),
       bounds: parseBounds(o.bounds),
       syncOffsetMs: num(o.syncOffsetMs, -5000, 5000),
+      tapWords: bool(o.tapWords),
       heights: heights as AppSettings['overlay']['heights'] | undefined,
     });
   }
@@ -99,6 +100,9 @@ export function parseSettingsPatch(input: unknown): SettingsPatch {
       decreaseFont: accel(s.decreaseFont),
     });
   }
+  if (isObj(input.library)) {
+    patch.library = definedOnly({ recordHistory: bool(input.library.recordHistory) });
+  }
   return patch;
 }
 
@@ -118,6 +122,7 @@ export function applyPatch(base: AppSettings, patch: SettingsPatch): AppSettings
     },
     translation: { ...base.translation, ...patch.translation },
     shortcuts: { ...base.shortcuts, ...patch.shortcuts },
+    library: { ...base.library, ...patch.library },
   };
 }
 

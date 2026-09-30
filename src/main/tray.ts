@@ -71,6 +71,8 @@ export class TrayController {
       },
       { label: 'Reset Overlay Position', click: a('overlay.resetPosition') },
       { type: 'separator' },
+      { label: 'Vocabulary…', click: a('settings.openVocabulary') },
+      { label: 'History & Favorites…', click: a('settings.openHistory') },
       { label: 'Settings…', click: a('settings.open') },
       { type: 'separator' },
       {

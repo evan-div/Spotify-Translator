@@ -2,13 +2,16 @@ import { useCallback, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 
 const INTERACTIVE = 'button, input, select, textarea, a, [data-nodrag]';
+/** Pointer travel (px) before a press becomes a drag; below this it stays a click (e.g. tapping a word). */
+const DRAG_THRESHOLD_PX = 4;
 
 /**
  * Drags the whole window with pointer events instead of `-webkit-app-region: drag`, because drag
- * regions swallow hover and wheel events. Disabled when `enabled` is false (locked overlay).
+ * regions swallow hover, click and wheel events. Disabled when `enabled` is false (locked overlay).
  */
 export function useWindowDrag(enabled: boolean) {
   const origin = useRef<{ x: number; y: number } | null>(null);
+  const dragging = useRef(false);
   const frame = useRef<number | null>(null);
   const pending = useRef<{ dx: number; dy: number } | null>(null);
 
@@ -25,16 +28,24 @@ export function useWindowDrag(enabled: boolean) {
       if (!enabled || event.button !== 0) return;
       if ((event.target as HTMLElement).closest(INTERACTIVE)) return;
       origin.current = { x: event.screenX, y: event.screenY };
-      event.currentTarget.setPointerCapture(event.pointerId);
-      window.lyricLens.overlayDrag.start();
+      dragging.current = false;
     },
     [enabled],
   );
 
   const onPointerMove = useCallback(
     (event: ReactPointerEvent<HTMLElement>) => {
-      if (!origin.current) return;
-      pending.current = { dx: event.screenX - origin.current.x, dy: event.screenY - origin.current.y };
+      const start = origin.current;
+      if (!start) return;
+      const dx = event.screenX - start.x;
+      const dy = event.screenY - start.y;
+      if (!dragging.current) {
+        if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+        dragging.current = true;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        window.lyricLens.overlayDrag.start();
+      }
+      pending.current = { dx, dy };
       frame.current ??= requestAnimationFrame(flush);
     },
     [flush],
@@ -43,7 +54,10 @@ export function useWindowDrag(enabled: boolean) {
   const end = useCallback(
     (event: ReactPointerEvent<HTMLElement>) => {
       if (!origin.current) return;
+      const wasDragging = dragging.current;
       origin.current = null;
+      dragging.current = false;
+      if (!wasDragging) return;
       if (frame.current !== null) cancelAnimationFrame(frame.current);
       frame.current = null;
       if (pending.current) flush();

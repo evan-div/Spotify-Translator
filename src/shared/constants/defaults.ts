@@ -37,6 +37,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
       compact: OVERLAY_LIMITS.defaultCompactHeight,
     },
     syncOffsetMs: 0,
+    tapWords: true,
   },
   translation: {
     provider: 'none',
@@ -51,6 +52,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     increaseFont: 'CommandOrControl+Alt+Shift+Up',
     decreaseFont: 'CommandOrControl+Alt+Shift+Down',
   },
+  library: { recordHistory: true },
 };
 
 /** Languages the UI can offer as translation targets. Extend here (and in providers) to add more. */

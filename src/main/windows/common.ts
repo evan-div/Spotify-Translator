@@ -44,8 +44,9 @@ export function createSecureWindow(options: BrowserWindowConstructorOptions): Br
   return window;
 }
 
-export function loadRenderer(window: BrowserWindow, page: RendererPage): Promise<void> {
+export function loadRenderer(window: BrowserWindow, page: RendererPage, section?: string): Promise<void> {
   const dev = process.env.ELECTRON_RENDERER_URL;
-  if (dev) return window.loadURL(`${dev}#/${page}`);
-  return window.loadFile(join(__dirname, '../renderer/index.html'), { hash: `/${page}` });
+  const hash = section ? `/${page}/${section}` : `/${page}`;
+  if (dev) return window.loadURL(`${dev}#${hash}`);
+  return window.loadFile(join(__dirname, '../renderer/index.html'), { hash });
 }

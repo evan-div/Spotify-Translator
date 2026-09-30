@@ -1,6 +1,8 @@
 import { ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { IPC } from '@shared/constants/ipc';
 import type { AppSettings, SettingsPatch } from '@shared/types/settings';
+import type { WordLookupResult, WordSaveRequest } from '@shared/types/library';
+import type { LyricsView } from '@shared/types/domain';
 import {
   APP_ACTIONS,
   DEMO_COMMANDS,
@@ -25,9 +27,28 @@ export interface IpcHost {
   testTranslation(): Promise<ActionResult>;
   demoCommand(command: DemoCommand): ActionResult;
   dragOverlay(phase: 'start' | 'move' | 'end', dx?: number, dy?: number): void;
+  lookupWord(request: WordSaveRequest): Promise<WordLookupResult>;
+  saveWord(request: WordSaveRequest): Promise<ActionResult>;
+  removeWord(id: string): ActionResult;
+  setFavorite(trackKey: string, favorite: boolean): ActionResult;
+  removeHistory(trackKey: string): ActionResult;
+  clearHistory(): ActionResult;
+  getSongLyrics(trackKey: string): LyricsView | null;
 }
 
 const denied: ActionResult = { ok: false, message: 'Request rejected.' };
+const MAX_KEY = 200;
+
+const isText = (value: unknown, max: number): value is string => typeof value === 'string' && value.length <= max;
+
+/** Validates an untrusted word request from the renderer. */
+export function parseWordRequest(value: unknown): WordSaveRequest | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const { word, line, translation } = value as Record<string, unknown>;
+  if (!isText(word, 60) || word.trim() === '' || !isText(line, 600)) return null;
+  if (translation !== null && translation !== undefined && !isText(translation, 600)) return null;
+  return { word, line, translation: (translation as string | null | undefined) ?? null };
+}
 
 function trusted(event: IpcMainInvokeEvent): boolean {
   const ok = isTrustedRendererUrl(event.senderFrame?.url);
@@ -79,6 +100,28 @@ export function registerIpc(host: IpcHost): () => void {
     return host.demoCommand(command as DemoCommand);
   });
 
+  ipcMain.handle(IPC.library.lookupWord, async (event, request: unknown): Promise<WordLookupResult> => {
+    const parsed = trusted(event) ? parseWordRequest(request) : null;
+    return parsed ? host.lookupWord(parsed) : { status: 'error', word: '', message: 'Request rejected.', saved: false };
+  });
+  ipcMain.handle(IPC.library.saveWord, async (event, request: unknown): Promise<ActionResult> => {
+    const parsed = trusted(event) ? parseWordRequest(request) : null;
+    return parsed ? host.saveWord(parsed) : denied;
+  });
+  ipcMain.handle(IPC.library.removeWord, async (event, id: unknown): Promise<ActionResult> =>
+    trusted(event) && isText(id, 60) ? host.removeWord(id) : denied,
+  );
+  ipcMain.handle(IPC.library.setFavorite, async (event, trackKey: unknown, favorite: unknown): Promise<ActionResult> =>
+    trusted(event) && isText(trackKey, MAX_KEY) && typeof favorite === 'boolean' ? host.setFavorite(trackKey, favorite) : denied,
+  );
+  ipcMain.handle(IPC.library.removeHistory, async (event, trackKey: unknown): Promise<ActionResult> =>
+    trusted(event) && isText(trackKey, MAX_KEY) ? host.removeHistory(trackKey) : denied,
+  );
+  ipcMain.handle(IPC.library.clearHistory, async (event): Promise<ActionResult> => (trusted(event) ? host.clearHistory() : denied));
+  ipcMain.handle(IPC.library.getSong, async (event, trackKey: unknown): Promise<LyricsView | null> =>
+    trusted(event) && isText(trackKey, MAX_KEY) ? host.getSongLyrics(trackKey) : null,
+  );
+
   const onDrag = (phase: 'start' | 'move' | 'end') => (event: Electron.IpcMainEvent, dx?: unknown, dy?: unknown) => {
     if (!isTrustedRendererUrl(event.senderFrame?.url)) return;
     if (phase === 'move') {
@@ -102,6 +145,7 @@ export function registerIpc(host: IpcHost): () => void {
       IPC.clearTranslationKey,
       IPC.testTranslation,
       IPC.demoCommand,
+      ...Object.values(IPC.library),
     ].forEach((channel) => ipcMain.removeHandler(channel));
   };
 }

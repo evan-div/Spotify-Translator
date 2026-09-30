@@ -25,6 +25,7 @@ const toDisplay = (lines: TrackTranslation['lines']): DisplayLine[] =>
   lines.map((l) => ({
     text: l.text,
     translation: l.translation,
+    language: l.language,
     startTimeMs: l.startTimeMs,
     endTimeMs: l.endTimeMs,
   }));
@@ -59,7 +60,13 @@ export function viewFromLyrics(
     language: analysis.language,
     translationStatus: status,
     note: noteFor(status, analysis.language, detail),
-    lines: lyrics.lines.map((l) => ({ text: l.text, translation: null, startTimeMs: l.startTimeMs, endTimeMs: l.endTimeMs })),
+    lines: lyrics.lines.map((l, i) => ({
+      text: l.text,
+      translation: null,
+      language: analysis.lineLanguages[i],
+      startTimeMs: l.startTimeMs,
+      endTimeMs: l.endTimeMs,
+    })),
     fromCache,
     provider: lyrics.provider,
   };

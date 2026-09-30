@@ -1,5 +1,7 @@
+import type { LibraryState, WordLookupResult, WordSaveRequest } from './library';
 import type {
   LyricsState,
+  LyricsView,
   PlaybackState,
   SpotifyConnectionState,
 } from './domain';
@@ -31,7 +33,11 @@ export interface AppSnapshot {
   lyrics: LyricsState;
   providers: ProviderStatus;
   shortcutStatus: ShortcutStatus;
+  library: LibraryState;
 }
+
+export type SettingsTab = 'settings' | 'vocabulary' | 'history';
+export const SETTINGS_TABS: readonly SettingsTab[] = ['settings', 'vocabulary', 'history'];
 
 export type AppAction =
   | 'spotify.connect'
@@ -45,6 +51,8 @@ export type AppAction =
   | 'overlay.toggleClickThrough'
   | 'overlay.resetPosition'
   | 'settings.open'
+  | 'settings.openVocabulary'
+  | 'settings.openHistory'
   | 'shortcuts.suspend'
   | 'shortcuts.resume'
   | 'app.quit';
@@ -61,6 +69,8 @@ export const APP_ACTIONS: readonly AppAction[] = [
   'overlay.toggleClickThrough',
   'overlay.resetPosition',
   'settings.open',
+  'settings.openVocabulary',
+  'settings.openHistory',
   'shortcuts.suspend',
   'shortcuts.resume',
   'app.quit',
@@ -105,7 +115,19 @@ export interface LyricLensApi {
   onLyrics(cb: (state: LyricsState) => void): () => void;
   onSettings(cb: (settings: AppSettings) => void): () => void;
   onSpotify(cb: (state: SpotifyConnectionState) => void): () => void;
+  library: {
+    lookupWord(request: WordSaveRequest): Promise<WordLookupResult>;
+    saveWord(request: WordSaveRequest): Promise<ActionResult>;
+    removeWord(id: string): Promise<ActionResult>;
+    setFavorite(trackKey: string, favorite: boolean): Promise<ActionResult>;
+    removeHistory(trackKey: string): Promise<ActionResult>;
+    clearHistory(): Promise<ActionResult>;
+    /** Cached lyrics + translation for a song in history, for reading it again. */
+    getSong(trackKey: string): Promise<LyricsView | null>;
+  };
   onProviders(cb: (providers: ProviderStatus) => void): () => void;
+  onLibrary(cb: (library: LibraryState) => void): () => void;
+  onNavigate(cb: (tab: SettingsTab) => void): () => void;
   onShortcutStatus(cb: (status: ShortcutStatus) => void): () => void;
   onNotice(cb: (notice: Notice) => void): () => void;
 }

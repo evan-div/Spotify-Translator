@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import type { MouseEvent } from 'react';
 import type { SpotifyTrack } from '@shared/types/domain';
 import type { OverlaySettings } from '@shared/types/settings';
 import { EmptyState } from '../components/EmptyState';
@@ -7,9 +8,12 @@ import { PlainLyrics } from '../components/PlainLyrics';
 import { SyncedLyrics } from '../components/SyncedLyrics';
 import { Toast } from '../components/Toast';
 import { TrackHeader } from '../components/TrackHeader';
+import type { TapConfig } from '../components/TappableText';
+import { WordSheet } from '../components/WordSheet';
 import { resolveOverlayContent, type OverlayContent } from '../hooks/overlayContent';
 import { useAppSelector } from '../hooks/useAppState';
 import { useSyncEngine } from '../hooks/useSyncEngine';
+import { useWordLookup } from '../hooks/useWordLookup';
 import { useWindowDrag } from '../hooks/useWindowDrag';
 
 const ACTION_LABEL = { connect: 'Open Settings', settings: 'Open Settings', retry: 'Try again' } as const;
@@ -21,6 +25,7 @@ export function OverlayPage() {
   const spotify = useAppSelector((s) => s.spotify);
   const demo = useAppSelector((s) => s.demo);
   const notice = useAppSelector((s) => s.notice);
+  const library = useAppSelector((s) => s.library);
 
   const content = useMemo(
     () => resolveOverlayContent({ connection: spotify, playback, lyrics, demo }),
@@ -40,6 +45,30 @@ export function OverlayPage() {
 
   const paused = playback.status === 'paused';
   const track = playback.mediaType === 'track' ? playback.track : null;
+
+  const { lookup, open: openWord, close: closeWord } = useWordLookup(track?.key ?? null);
+  const savedWords = useMemo(() => new Set(library.vocabulary.map((v) => v.id)), [library.vocabulary]);
+  const canTap = overlay.tapWords && !overlay.clickThrough && view !== null && view.language !== 'english';
+  const tap = useMemo<TapConfig | null>(
+    () => (canTap ? { saved: savedWords, onTap: openWord } : null),
+    [canTap, savedWords, openWord],
+  );
+  const favorite = track ? (library.history.find((h) => h.trackKey === track.key)?.favorite ?? false) : null;
+  const toggleFavorite = useCallback(() => {
+    if (track) void window.lyricLens.library.setFavorite(track.key, !favorite);
+  }, [track, favorite]);
+  const toggleSaved = useCallback(() => {
+    if (!lookup) return;
+    if (savedWords.has(lookup.id)) void window.lyricLens.library.removeWord(lookup.id);
+    else void window.lyricLens.library.saveWord({ word: lookup.word, line: lookup.line, translation: lookup.translation });
+  }, [lookup, savedWords]);
+  // Clicking empty space dismisses the card; words, the card and the toolbar handle their own clicks.
+  const onPanelClick = useCallback(
+    (event: MouseEvent) => {
+      if (lookup && !(event.target as HTMLElement).closest('.word, .sheet, .toolbar')) closeWord();
+    },
+    [lookup, closeWord],
+  );
   const headerStatus = paused ? 'Paused' : null;
   const artwork = overlay.albumArtBackground && track?.artworkUrl ? track.artworkUrl : null;
 
@@ -51,18 +80,22 @@ export function OverlayPage() {
       data-paused={paused}
       data-clickthrough={overlay.clickThrough}
       style={{ ['--fs' as string]: `${overlay.fontSize}px` }}
+      onClick={onPanelClick}
       {...drag}
     >
       {artwork && <div className="panel__art" style={{ backgroundImage: `url("${artwork}")` }} />}
       <header className="panel__header">
-        {overlay.compact ? <div className="meta" /> : <TrackHeader track={track} status={headerStatus} />}
-        {!overlay.clickThrough && <OverlayToolbar overlay={overlay} onPatch={patch} onOpenSettings={openSettings} />}
+        {overlay.compact ? <div className="meta" /> : <TrackHeader track={track} status={headerStatus} favorite={favorite === true} />}
+        {!overlay.clickThrough && <OverlayToolbar overlay={overlay} onPatch={patch} onOpenSettings={openSettings} favorite={favorite} onToggleFavorite={toggleFavorite} />}
       </header>
       <main className="panel__body">
-        <Body content={content} overlay={overlay} activeIndex={sync.activeIndex} track={track} onAction={onAction} />
+        <Body content={content} overlay={overlay} activeIndex={sync.activeIndex} track={track} onAction={onAction} tap={tap} />
       </main>
       {view?.note && !overlay.compact && content.kind === 'lyrics' && <div className="panel__note">{view.note}</div>}
       {paused && overlay.compact && content.kind === 'lyrics' && <div className="panel__paused">Paused</div>}
+      {lookup && (
+        <WordSheet lookup={lookup} saved={savedWords.has(lookup.id)} onToggleSave={toggleSaved} onClose={closeWord} />
+      )}
       <Toast notice={notice} />
     </div>
   );
@@ -74,9 +107,10 @@ interface BodyProps {
   activeIndex: number;
   track: SpotifyTrack | null;
   onAction: (action: 'connect' | 'settings' | 'retry') => void;
+  tap: TapConfig | null;
 }
 
-function Body({ content, overlay, activeIndex, track, onAction }: BodyProps) {
+function Body({ content, overlay, activeIndex, track, onAction, tap }: BodyProps) {
   if (content.kind === 'loading') {
     return (
       <div className="loading" role="status">
@@ -105,8 +139,9 @@ function Body({ content, overlay, activeIndex, track, onAction }: BodyProps) {
       showContext={overlay.showContext && !overlay.compact}
       translating={translating}
       fontSize={overlay.fontSize}
+      tap={tap}
     />
   ) : (
-    <PlainLyrics view={view} mode={overlay.displayMode} translating={translating} />
+    <PlainLyrics view={view} mode={overlay.displayMode} translating={translating} tap={tap} />
   );
 }

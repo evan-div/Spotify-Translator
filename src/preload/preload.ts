@@ -31,6 +31,17 @@ const api: LyricLensApi = {
   onSpotify: (cb) => subscribe(IPC.evt.spotify, cb),
   onProviders: (cb) => subscribe(IPC.evt.providers, cb),
   onShortcutStatus: (cb) => subscribe(IPC.evt.shortcutStatus, cb),
+  library: {
+    lookupWord: (request) => ipcRenderer.invoke(IPC.library.lookupWord, request),
+    saveWord: (request) => ipcRenderer.invoke(IPC.library.saveWord, request),
+    removeWord: (id) => ipcRenderer.invoke(IPC.library.removeWord, id),
+    setFavorite: (trackKey, favorite) => ipcRenderer.invoke(IPC.library.setFavorite, trackKey, favorite),
+    removeHistory: (trackKey) => ipcRenderer.invoke(IPC.library.removeHistory, trackKey),
+    clearHistory: () => ipcRenderer.invoke(IPC.library.clearHistory),
+    getSong: (trackKey) => ipcRenderer.invoke(IPC.library.getSong, trackKey),
+  },
+  onLibrary: (cb) => subscribe(IPC.evt.library, cb),
+  onNavigate: (cb) => subscribe(IPC.evt.navigate, cb),
   onNotice: (cb) => subscribe(IPC.evt.notice, cb),
 };
 
