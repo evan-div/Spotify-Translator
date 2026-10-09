@@ -169,7 +169,7 @@ export class DemoTranslationProvider implements TranslationProvider {
   isConfigured = (): boolean => true;
 
   async detectLanguage(text: string): Promise<DetectedLanguage> {
-    return { code: DEMO_TRANSLATIONS.has(text) ? 'es' : 'en' };
+    return { code: DEMO_TRANSLATIONS.has(text) ? 'es' : 'en' }; // demo only: the detector is not exercised
   }
   async translateText(text: string, _options?: TranslateOptions): Promise<string> {
     return (await this.translateLines([text]))[0] ?? '';

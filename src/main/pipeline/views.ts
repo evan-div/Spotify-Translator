@@ -1,5 +1,6 @@
 import type {
   DisplayLine,
+  SourceLanguageCode,
   LanguageAnalysis,
   LyricsLanguage,
   LyricsView,
@@ -12,7 +13,7 @@ const NOTES: Partial<Record<TranslationStatus, string>> = {
   'not-needed': "English song detected. Translation isn't needed for this track.",
   'not-configured': 'Add a translation provider in Settings to translate this song.',
   failed: 'Translation unavailable. Showing original lyrics.',
-  'unsupported-language': "This song doesn't appear to be Spanish. Showing original lyrics.",
+  'unsupported-language': "This song doesn't appear to be Spanish or French. Showing original lyrics.",
 };
 
 export function noteFor(status: TranslationStatus, language: LyricsLanguage, detail?: string): string | null {
@@ -30,6 +31,16 @@ const toDisplay = (lines: TrackTranslation['lines']): DisplayLine[] =>
     endTimeMs: l.endTimeMs,
   }));
 
+/** The translatable language most lines are in (for labels and word lookup). */
+function dominantSource(lines: ReadonlyArray<{ language?: string }>, fallback: SourceLanguageCode | null): SourceLanguageCode | null {
+  const es = lines.filter((l) => l.language === 'es').length;
+  const fr = lines.filter((l) => l.language === 'fr').length;
+  if (es === 0 && fr === 0) return fallback;
+  return es >= fr ? 'es' : 'fr';
+}
+
+const FROM_SONG_LANGUAGE: Partial<Record<LyricsLanguage, SourceLanguageCode>> = { spanish: 'es', french: 'fr' };
+
 export function viewFromTranslation(t: TrackTranslation, fromCache: boolean): LyricsView {
   return {
     trackKey: t.trackKey,
@@ -37,6 +48,7 @@ export function viewFromTranslation(t: TrackTranslation, fromCache: boolean): Ly
     artist: t.artist,
     synced: t.synced,
     language: t.originalLanguage,
+    sourceLanguage: dominantSource(t.lines, FROM_SONG_LANGUAGE[t.originalLanguage] ?? null),
     translationStatus: 'translated',
     note: null,
     lines: toDisplay(t.lines),
@@ -58,6 +70,7 @@ export function viewFromLyrics(
     artist: lyrics.artist,
     synced: lyrics.synced,
     language: analysis.language,
+    sourceLanguage: analysis.sourceLanguage,
     translationStatus: status,
     note: noteFor(status, analysis.language, detail),
     lines: lyrics.lines.map((l, i) => ({

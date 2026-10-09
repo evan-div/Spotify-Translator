@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WordLookupResult } from '@shared/types/library';
-import { normalizeWord } from '@shared/utils/words';
+import type { SourceLanguageCode } from '@shared/types/domain';
+import { normalizeWord, vocabularyId } from '@shared/utils/words';
 
 export interface LookupState {
   /** Word as tapped (display form). */
   word: string;
-  /** Normalised id; matches vocabulary entry ids. */
+  /** Vocabulary id ("es:querer"); matches vocabulary entry ids. */
   id: string;
+  language: SourceLanguageCode;
   line: string;
   translation: string | null;
   result: WordLookupResult | null;
@@ -22,12 +24,13 @@ export function useWordLookup(trackKey: string | null) {
     setLookup(null);
   }, []);
 
-  const open = useCallback((word: string, line: string, translation: string | null) => {
-    const id = normalizeWord(word);
-    if (!id) return;
+  const open = useCallback((word: string, line: string, translation: string | null, language: SourceLanguageCode) => {
+    const normalized = normalizeWord(word);
+    if (!normalized) return;
+    const id = vocabularyId(language, normalized);
     const current = ++requestId.current;
-    setLookup({ word, id, line, translation, result: null });
-    void window.lyricLens.library.lookupWord({ word, line, translation }).then((result) => {
+    setLookup({ word, id, language, line, translation, result: null });
+    void window.lyricLens.library.lookupWord({ word, line, translation, language }).then((result) => {
       if (requestId.current === current) setLookup((s) => (s && s.id === id ? { ...s, result } : s));
     });
   }, []);

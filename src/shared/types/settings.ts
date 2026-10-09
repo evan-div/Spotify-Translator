@@ -1,7 +1,9 @@
+import type { SourceLanguageCode } from './domain';
+
 export type ThemeSetting = 'system' | 'light' | 'dark';
 export type DisplayMode = 'both' | 'translation' | 'original';
 export type TranslationProviderId = 'none' | 'deepl' | 'google' | 'openai';
-export type SourceLanguageSetting = 'auto' | 'es';
+export type SourceLanguageSetting = 'auto' | SourceLanguageCode;
 
 export interface Bounds {
   x: number;
@@ -29,7 +31,7 @@ export interface OverlaySettings {
   heights: { regular: number; compact: number };
   /** Shifts lyric timing (positive = lyrics appear later). */
   syncOffsetMs: number;
-  /** Tap a Spanish word in the overlay to see its definition. */
+  /** Tap a word in the overlay to see its definition. */
   tapWords: boolean;
 }
 

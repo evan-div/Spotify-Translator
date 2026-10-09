@@ -1,5 +1,6 @@
+import type { SourceLanguageCode } from '@shared/types/domain';
 import type { VocabularyEntry, WordContext, WordDefinition } from '@shared/types/library';
-import { shortGloss } from '@shared/utils/words';
+import { shortGloss, vocabularyId } from '@shared/utils/words';
 import { TypedEmitter } from '@shared/utils/emitter';
 import { PersistedDocument } from '../storage/persisted';
 
@@ -25,7 +26,11 @@ export class VocabularyStore extends TypedEmitter<Events> {
     super();
     this.doc = new PersistedDocument<VocabularyFile>(path);
     const stored = this.doc.load({ version: FILE_VERSION, entries: [] });
-    this.entries = Array.isArray(stored.entries) ? stored.entries : [];
+    // Entries saved before French support had no language: they were all Spanish.
+    this.entries = (Array.isArray(stored.entries) ? stored.entries : []).map((e) => {
+      const language = (e as Partial<VocabularyEntry>).language ?? 'es';
+      return { ...e, language, id: e.id.includes(':') ? e.id : vocabularyId(language, e.id) };
+    });
   }
 
   list(): VocabularyEntry[] {
@@ -37,8 +42,9 @@ export class VocabularyStore extends TypedEmitter<Events> {
   }
 
   /** Saves (or updates) a word from a definition and the line it was found in. */
-  save(definition: WordDefinition | null, word: string, context: WordContext): VocabularyEntry {
-    const existing = this.entries.find((e) => e.id === word);
+  save(definition: WordDefinition | null, word: string, language: SourceLanguageCode, context: WordContext): VocabularyEntry {
+    const id = vocabularyId(language, word);
+    const existing = this.entries.find((e) => e.id === id);
     const sense = definition?.senses[0];
     const entry: VocabularyEntry = existing
       ? {
@@ -46,8 +52,9 @@ export class VocabularyStore extends TypedEmitter<Events> {
           contexts: [context, ...existing.contexts.filter((c) => c.line !== context.line)].slice(0, MAX_CONTEXTS),
         }
       : {
-          id: word,
+          id,
           word,
+          language,
           lemma: definition?.lemma ?? null,
           partOfSpeech: sense?.partOfSpeech || null,
           meaning: definition ? shortGloss(definition.senses) : '',
@@ -55,7 +62,7 @@ export class VocabularyStore extends TypedEmitter<Events> {
           source: definition?.source ?? 'machine',
           savedAt: new Date().toISOString(),
         };
-    this.entries = [entry, ...this.entries.filter((e) => e.id !== word)];
+    this.entries = [entry, ...this.entries.filter((e) => e.id !== id)];
     this.commit();
     return entry;
   }

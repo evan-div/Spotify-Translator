@@ -1,6 +1,6 @@
 import type { LyricsState, LyricsView, PlaybackState, SpotifyConnectionState } from '@shared/types/domain';
 import type { LibraryState, WordLookupResult, WordSaveRequest } from '@shared/types/library';
-import { normalizeWord } from '@shared/utils/words';
+import { normalizeWord, vocabularyId } from '@shared/utils/words';
 import type { ActionResult, AppSnapshot, DemoCommand, ProviderStatus } from '@shared/types/ipc';
 import { TypedEmitter } from '@shared/utils/emitter';
 import { detectTrackChange, playbackIdentity } from '@shared/utils/trackChange';
@@ -219,9 +219,9 @@ export class AppController extends TypedEmitter<ControllerEvents> {
   async lookupWord(request: WordSaveRequest): Promise<WordLookupResult> {
     const word = normalizeWord(request.word);
     if (!word) return { status: 'not-found', word: request.word, saved: false };
-    const saved = this.bundle.vocabulary.has(word);
+    const saved = this.bundle.vocabulary.has(vocabularyId(request.language, word));
     try {
-      const definition = await this.bundle.dictionary.define(word);
+      const definition = await this.bundle.dictionary.define(word, request.language);
       return definition ? { status: 'found', definition, saved } : { status: 'not-found', word, saved };
     } catch (error) {
       log.warn(`Lookup failed for "${word}"`, error);
@@ -235,12 +235,13 @@ export class AppController extends TypedEmitter<ControllerEvents> {
     if (!word || !track) return { ok: false, message: 'Nothing to save.' };
     let definition = null;
     try {
-      definition = await this.bundle.dictionary.define(word);
+      definition = await this.bundle.dictionary.define(word, request.language);
     } catch (error) {
       // Saving still works offline; the meaning can be looked up again later.
       log.warn(`Saving "${word}" without a definition`, error);
     }
-    this.bundle.vocabulary.save(definition, word, {
+    this.bundle.vocabulary.save(definition, word, request.language, {
+      language: request.language,
       line: request.line.slice(0, 300),
       translation: request.translation?.slice(0, 300) ?? null,
       trackKey: track.key,

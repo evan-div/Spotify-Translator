@@ -1,6 +1,7 @@
 import { ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { IPC } from '@shared/constants/ipc';
 import type { AppSettings, SettingsPatch } from '@shared/types/settings';
+import { isSourceLanguage } from '@shared/constants/languages';
 import type { WordLookupResult, WordSaveRequest } from '@shared/types/library';
 import type { LyricsView } from '@shared/types/domain';
 import {
@@ -44,10 +45,10 @@ const isText = (value: unknown, max: number): value is string => typeof value ==
 /** Validates an untrusted word request from the renderer. */
 export function parseWordRequest(value: unknown): WordSaveRequest | null {
   if (typeof value !== 'object' || value === null) return null;
-  const { word, line, translation } = value as Record<string, unknown>;
-  if (!isText(word, 60) || word.trim() === '' || !isText(line, 600)) return null;
+  const { word, line, translation, language } = value as Record<string, unknown>;
+  if (!isText(word, 60) || word.trim() === '' || !isText(line, 600) || !isSourceLanguage(language)) return null;
   if (translation !== null && translation !== undefined && !isText(translation, 600)) return null;
-  return { word, line, translation: (translation as string | null | undefined) ?? null };
+  return { word, line, translation: (translation as string | null | undefined) ?? null, language };
 }
 
 function trusted(event: IpcMainInvokeEvent): boolean {

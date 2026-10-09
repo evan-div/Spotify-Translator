@@ -1,12 +1,13 @@
 import type {
   LanguageAnalysis,
+  SourceLanguageCode,
   TargetLanguage,
   TrackLyrics,
   TrackQuery,
   TrackTranslation,
   TranslatedLyricLine,
 } from '@shared/types/domain';
-import { selectLinesToTranslate } from '@shared/utils/language';
+import { selectLinesToTranslate, sourceForTranslation } from '@shared/utils/language';
 import { TRANSLATION_SCHEMA_VERSION } from '../cache/caches';
 import { hashLyrics, translationCacheKey } from '../cache/cacheKeys';
 import { createLogger } from '../logger';
@@ -18,7 +19,8 @@ export interface TranslateLyricsRequest {
   track: TrackQuery;
   lyrics: TrackLyrics;
   analysis: LanguageAnalysis;
-  forceSpanish: boolean;
+  /** Language pinned in Settings, or null for auto-detect. */
+  forced: SourceLanguageCode | null;
   target: TargetLanguage;
   provider: TranslationProvider;
   signal?: AbortSignal;
@@ -29,8 +31,9 @@ export interface TranslateLyricsRequest {
  * consistent and cheap), and reassembles them in the original order.
  */
 export async function translateLyrics(request: TranslateLyricsRequest): Promise<TrackTranslation> {
-  const { track, lyrics, analysis, forceSpanish, target, provider, signal } = request;
-  const selected = selectLinesToTranslate(lyrics.lines, analysis, forceSpanish);
+  const { track, lyrics, analysis, forced, target, provider, signal } = request;
+  const selected = selectLinesToTranslate(lyrics.lines, analysis, forced);
+  const source = sourceForTranslation(analysis, selected, forced);
 
   const uniqueTexts = [...new Set(lyrics.lines.filter((_, i) => selected[i]).map((l) => l.text))];
   log.info(
@@ -39,7 +42,7 @@ export async function translateLyrics(request: TranslateLyricsRequest): Promise<
 
   const translated = uniqueTexts.length
     ? await provider.translateLines(uniqueTexts, {
-        source: 'es',
+        source,
         target,
         context: { title: lyrics.title, artist: lyrics.artist },
         signal,

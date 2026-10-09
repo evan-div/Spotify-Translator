@@ -21,7 +21,7 @@ export function PlainLyrics({ view, mode, translating, tap }: Props) {
           return (
             <div className="plain__pair" key={i}>
               <div className="plain__primary">
-                <TappableText text={primary} line={line.text} translation={line.translation} tap={tappable ? tap : null} />
+                <TappableText text={primary} line={line.text} translation={line.translation} language={line.language} tap={tappable ? tap : null} />
               </div>
               {secondary && <div className="plain__secondary">{secondary}</div>}
               {!secondary && translating && mode === 'both' && <div className="plain__secondary plain__secondary--pending">…</div>}

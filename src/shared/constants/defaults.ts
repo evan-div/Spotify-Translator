@@ -60,6 +60,7 @@ export const TARGET_LANGUAGES = [{ code: 'en', label: 'English' }] as const;
 export const SOURCE_LANGUAGES = [
   { code: 'auto', label: 'Auto detect' },
   { code: 'es', label: 'Spanish' },
+  { code: 'fr', label: 'French' },
 ] as const;
 
 export const TRANSLATION_PROVIDERS = [

@@ -88,16 +88,16 @@ describe('Wiktionary provider', () => {
       urls.push(String(input));
       return String(input).endsWith('/Madrid') ? new Response(JSON.stringify({ es: [{ partOfSpeech: 'Proper noun', definitions: [{ definition: 'Madrid' }] }] }), { status: 200 }) : new Response('{}', { status: 404 });
     }) as unknown as typeof fetch;
-    const result = await new WiktionaryProvider(fetchImpl).lookup('madrid');
+    const result = await new WiktionaryProvider(fetchImpl).lookup('madrid', 'es');
     expect(urls.map((u) => u.split('/').pop())).toEqual(['madrid', 'Madrid']);
     expect(result?.senses[0]?.partOfSpeech).toBe('Proper noun');
     expect(result?.sourceUrl).toContain('Madrid');
     const none = vi.fn(async () => new Response('{}', { status: 404 })) as unknown as typeof fetch;
-    expect(await new WiktionaryProvider(none).lookup('zzzz')).toBeNull();
+    expect(await new WiktionaryProvider(none).lookup('zzzz', 'es')).toBeNull();
   });
   it('surfaces network failures as typed errors', async () => {
     const offline = vi.fn(async () => { throw new TypeError('offline'); }) as unknown as typeof fetch;
-    await expect(new WiktionaryProvider(offline).lookup('casa')).rejects.toMatchObject({ code: 'network' });
+    await expect(new WiktionaryProvider(offline).lookup('casa', 'es')).rejects.toMatchObject({ code: 'network' });
   });
 });
 
@@ -105,7 +105,7 @@ const provider = (table: Record<string, DictionaryLookup | null | Error>): Dicti
   const calls: string[] = [];
   return {
     id: 't', displayName: 'Test', source: 'wiktionary' as const, calls,
-    async lookup(word) {
+    async lookup(word, _language) {
       calls.push(word);
       const v = table[word];
       if (v instanceof Error) throw v;
@@ -121,67 +121,67 @@ describe('DictionaryService', () => {
   it('caches dictionary results', async () => {
     const p = provider({ casa: sense('house') });
     const svc = new DictionaryService([p], new MemoryKeyedCache(), () => null);
-    expect((await svc.define('casa'))?.senses[0]?.meanings).toEqual(['house']);
-    await svc.define('casa');
+    expect((await svc.define('casa', 'es'))?.senses[0]?.meanings).toEqual(['house']);
+    await svc.define('casa', 'es');
     expect(p.calls).toEqual(['casa']);
   });
   it('follows an inflected form to its dictionary form', async () => {
     const p = provider({ quiero: sense('first-person singular present indicative of querer'), querer: sense('to want', 'to love') });
-    const def = await new DictionaryService([p], new MemoryKeyedCache(), () => null).define('quiero');
+    const def = await new DictionaryService([p], new MemoryKeyedCache(), () => null).define('quiero', 'es');
     expect(def).toMatchObject({ word: 'quiero', lemma: 'querer', formNote: expect.stringContaining('querer') });
     expect(def?.senses[0]?.meanings).toEqual(['to want', 'to love']);
   });
   it('keeps the form note when the lemma is not in the dictionary', async () => {
     const p = provider({ quiero: sense('first-person singular present indicative of querer') });
-    const def = await new DictionaryService([p], new MemoryKeyedCache(), () => null).define('quiero');
+    const def = await new DictionaryService([p], new MemoryKeyedCache(), () => null).define('quiero', 'es');
     expect(def?.lemma).toBe('querer');
     expect(def?.senses[0]?.meanings[0]).toMatch(/querer/);
   });
   it('falls back to a marked machine translation, and does not cache it', async () => {
     const cache = new MemoryKeyedCache<WordDefinition>();
     const svc = new DictionaryService([provider({})], cache, () => translator('sweetheart'));
-    const def = await svc.define('cariñito');
+    const def = await svc.define('cariñito', 'es');
     expect(def).toMatchObject({ source: 'machine', senses: [{ meanings: ['sweetheart'] }] });
     expect(cache.get('dict:es:cariñito')).toBeNull();
   });
   it('ignores a "translation" identical to the word, and unconfigured translators', async () => {
-    expect(await new DictionaryService([provider({})], new MemoryKeyedCache(), () => translator('hola')).define('hola')).toBeNull();
-    expect(await new DictionaryService([provider({})], new MemoryKeyedCache(), () => translator('x', false)).define('hola')).toBeNull();
+    expect(await new DictionaryService([provider({})], new MemoryKeyedCache(), () => translator('hola')).define('hola', 'es')).toBeNull();
+    expect(await new DictionaryService([provider({})], new MemoryKeyedCache(), () => translator('x', false)).define('hola', 'es')).toBeNull();
   });
   it('uses the machine fallback when the dictionary is unreachable, and reports the error when there is none', async () => {
     const down = provider({ casa: new ProviderError('W', 'network', 'x') });
-    expect((await new DictionaryService([down], new MemoryKeyedCache(), () => translator('house')).define('casa'))?.source).toBe('machine');
-    await expect(new DictionaryService([down], new MemoryKeyedCache(), () => null).define('casa')).rejects.toMatchObject({ code: 'network' });
+    expect((await new DictionaryService([down], new MemoryKeyedCache(), () => translator('house')).define('casa', 'es'))?.source).toBe('machine');
+    await expect(new DictionaryService([down], new MemoryKeyedCache(), () => null).define('casa', 'es')).rejects.toMatchObject({ code: 'network' });
   });
 });
 
 const track = (key: string, title = key): SpotifyTrack => ({ id: key, key, title, artists: ['A'], album: '', artworkUrl: null, durationMs: 1000, isLocal: false });
 const view = (over: Partial<LyricsView> = {}): LyricsView => ({
-  trackKey: 'k', title: 't', artist: 'a', synced: true, language: 'spanish', translationStatus: 'translated', note: null, lines: [], fromCache: false, provider: 'x', ...over,
+  trackKey: 'k', title: 't', artist: 'a', synced: true, language: 'spanish', sourceLanguage: 'es', translationStatus: 'translated', note: null, lines: [], fromCache: false, provider: 'x', ...over,
 });
-const ctx = (line: string, key = 'k1') => ({ line, translation: null, trackKey: key, title: 'T', artist: 'A' });
+const ctx = (line: string, key = 'k1') => ({ language: 'es' as const, line, translation: null, trackKey: key, title: 'T', artist: 'A' });
 
 describe('VocabularyStore', () => {
   let dir = '';
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
-  const def: WordDefinition = { word: 'querer', lemma: null, formNote: null, senses: [{ partOfSpeech: 'Verb', meanings: ['to want', 'to love', 'to like'] }], source: 'wiktionary', sourceUrl: null };
+  const def: WordDefinition = { word: 'querer', language: 'es', lemma: null, formNote: null, senses: [{ partOfSpeech: 'Verb', meanings: ['to want', 'to love', 'to like'] }], source: 'wiktionary', sourceUrl: null };
 
   it('saves once per word and accumulates sightings, newest first', () => {
     const store = new VocabularyStore(null);
-    store.save(def, 'querer', ctx('te quiero', 'a'));
-    store.save(def, 'querer', ctx('quiero más', 'b'));
-    store.save(def, 'querer', ctx('te quiero', 'a')); // same line again: no duplicate
+    store.save(def, 'querer', 'es', ctx('te quiero', 'a'));
+    store.save(def, 'querer', 'es', ctx('quiero más', 'b'));
+    store.save(def, 'querer', 'es', ctx('te quiero', 'a')); // same line again: no duplicate
     expect(store.list()).toHaveLength(1);
-    expect(store.list()[0]).toMatchObject({ id: 'querer', meaning: 'to want; to love', partOfSpeech: 'Verb' });
+    expect(store.list()[0]).toMatchObject({ id: 'es:querer', language: 'es', meaning: 'to want; to love', partOfSpeech: 'Verb' });
     expect(store.list()[0]?.contexts.map((c) => c.line)).toEqual(['te quiero', 'quiero más']);
   });
   it('can save without a definition and remove', () => {
     const store = new VocabularyStore(null);
-    store.save(null, 'ay', ctx('ay ay'));
-    expect(store.has('ay')).toBe(true);
+    store.save(null, 'ay', 'es', ctx('ay ay'));
+    expect(store.has('es:ay')).toBe(true);
     expect(store.list()[0]?.meaning).toBe('');
-    store.remove('ay');
-    expect(store.has('ay')).toBe(false);
+    store.remove('es:ay');
+    expect(store.has('es:ay')).toBe(false);
   });
   it('persists to disk and notifies listeners', () => {
     dir = mkdtempSync(join(tmpdir(), 'll-vocab-'));
@@ -189,10 +189,10 @@ describe('VocabularyStore', () => {
     const a = new VocabularyStore(file);
     const listener = vi.fn();
     a.on('change', listener);
-    a.save(def, 'querer', ctx('x'));
+    a.save(def, 'querer', 'es', ctx('x'));
     a.flush();
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(new VocabularyStore(file).list()[0]?.id).toBe('querer');
+    expect(new VocabularyStore(file).list()[0]?.id).toBe('es:querer');
   });
   it('survives a corrupt file', () => {
     dir = mkdtempSync(join(tmpdir(), 'll-vocab-'));
@@ -251,11 +251,13 @@ describe('HistoryStore', () => {
 
 describe('untrusted input', () => {
   it('validates word requests from the renderer', () => {
-    expect(parseWordRequest({ word: 'casa', line: 'mi casa', translation: 'my house' })).toEqual({ word: 'casa', line: 'mi casa', translation: 'my house' });
-    expect(parseWordRequest({ word: 'casa', line: 'x' })).toEqual({ word: 'casa', line: 'x', translation: null });
-    expect(parseWordRequest({ word: '', line: 'x' })).toBeNull();
-    expect(parseWordRequest({ word: 'x'.repeat(100), line: 'x' })).toBeNull();
-    expect(parseWordRequest({ word: 'casa', line: 5 })).toBeNull();
+    expect(parseWordRequest({ word: 'casa', line: 'mi casa', translation: 'my house', language: 'es' })).toEqual({ word: 'casa', line: 'mi casa', translation: 'my house', language: 'es' });
+    expect(parseWordRequest({ word: 'casa', line: 'x', language: 'fr' })).toEqual({ word: 'casa', line: 'x', translation: null, language: 'fr' });
+    expect(parseWordRequest({ word: 'casa', line: 'x' })).toBeNull();
+    expect(parseWordRequest({ word: 'casa', line: 'x', language: 'de' })).toBeNull();
+    expect(parseWordRequest({ word: '', line: 'x', language: 'es' })).toBeNull();
+    expect(parseWordRequest({ word: 'x'.repeat(100), line: 'x', language: 'es' })).toBeNull();
+    expect(parseWordRequest({ word: 'casa', line: 5, language: 'es' })).toBeNull();
     expect(parseWordRequest(null)).toBeNull();
   });
   it('keeps new settings valid', () => {
@@ -270,14 +272,14 @@ import { formatRelativeTime, vocabularyToCsv } from '@shared/utils/csv';
 describe('CSV export and relative time', () => {
   it('escapes commas, quotes and newlines', () => {
     const csv = vocabularyToCsv([
-      { id: 'querer', word: 'querer', lemma: null, partOfSpeech: 'Verb', meaning: 'to want; to love', source: 'wiktionary', savedAt: '2026-01-01T00:00:00Z',
-        contexts: [{ line: 'Te quiero, "mucho"', translation: 'I love you\nso much', trackKey: 'k', title: 'Song', artist: 'Ana' }] },
+      { id: 'es:querer', word: 'querer', language: 'es', lemma: null, partOfSpeech: 'Verb', meaning: 'to want; to love', source: 'wiktionary', savedAt: '2026-01-01T00:00:00Z',
+        contexts: [{ language: 'es', line: 'Te quiero, "mucho"', translation: 'I love you\nso much', trackKey: 'k', title: 'Song', artist: 'Ana' }] },
     ]);
     const [header, row] = csv.trimEnd().split('\r\n');
-    expect(header).toBe('word,dictionary_form,part_of_speech,meaning,example,example_translation,song,artist,saved_at');
+    expect(header).toBe('word,language,dictionary_form,part_of_speech,meaning,example,example_translation,song,artist,saved_at');
     expect(csv).toContain('"Te quiero, ""mucho"""');
     expect(csv).toContain('"I love you\nso much"');
-    expect(row?.startsWith('querer,,Verb,')).toBe(true);
+    expect(row?.startsWith('querer,es,,Verb,')).toBe(true);
     expect(csv.endsWith('\r\n')).toBe(true);
   });
   it('is just a header for an empty list', () => {
@@ -294,5 +296,56 @@ describe('CSV export and relative time', () => {
     expect(formatRelativeTime(ago(21 * 86400_000), now)).toBe('3 wk ago');
     expect(formatRelativeTime(ago(400 * 86400_000), now)).toBe('1 yr ago');
     expect(formatRelativeTime('garbage', now)).toBe('');
+  });
+});
+
+describe('French vocabulary and dictionary', () => {
+  it('keeps the same word in different languages as separate entries', () => {
+    const store = new VocabularyStore(null);
+    store.save(null, 'pain', 'fr', { ...ctx('du pain'), language: 'fr' });
+    store.save(null, 'pain', 'es', ctx('pain'));
+    expect(store.list().map((e) => e.id).sort()).toEqual(['es:pain', 'fr:pain']);
+  });
+
+  it('migrates vocabulary saved before French support (Spanish, un-namespaced ids)', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'll-vocab-'));
+    const file = join(dir, 'v.json');
+    writeFileSync(file, JSON.stringify({ version: 1, entries: [{ id: 'querer', word: 'querer', lemma: null, partOfSpeech: null, meaning: 'to want', contexts: [], source: 'wiktionary', savedAt: 'x' }] }));
+    expect(new VocabularyStore(file).list()[0]).toMatchObject({ id: 'es:querer', language: 'es' });
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('reads the French section of a Wiktionary response', () => {
+    const body = { es: [{ partOfSpeech: 'Noun', definitions: [{ definition: 'spanish sense' }] }], fr: [{ partOfSpeech: 'Verb', definitions: [{ definition: 'to love' }] }] };
+    expect(parseWiktionary(body, 'fr')[0]).toMatchObject({ partOfSpeech: 'Verb', meanings: ['to love'] });
+    expect(parseWiktionary(body, 'es')[0]?.meanings).toEqual(['spanish sense']);
+  });
+
+  it('caches definitions per language and follows French inflections to their lemma', async () => {
+    const p = provider({ aime: sense('first-person singular present indicative of aimer'), aimer: sense('to love', 'to like') });
+    const cache = new MemoryKeyedCache<WordDefinition>();
+    const svc = new DictionaryService([p], cache, () => null);
+    const def = await svc.define('aime', 'fr');
+    expect(def).toMatchObject({ language: 'fr', lemma: 'aimer' });
+    expect(def?.senses[0]?.meanings).toEqual(['to love', 'to like']);
+    expect(cache.get('dict:fr:aime')).not.toBeNull();
+    expect(cache.get('dict:es:aime')).toBeNull();
+  });
+
+  it('tells the machine fallback which language the word is in', async () => {
+    let seen: string | null = null;
+    const t = { ...translator('love'), translateText: async (_w: string, o: { source: string | null }) => ((seen = o.source), 'love') } as unknown as TranslationProvider;
+    const def = await new DictionaryService([provider({})], new MemoryKeyedCache(), () => t).define('amour', 'fr');
+    expect(seen).toBe('fr');
+    expect(def).toMatchObject({ language: 'fr', source: 'machine' });
+  });
+});
+
+describe('French metadata matching', () => {
+  it('cleans French version suffixes and splits "et" in artist names', async () => {
+    const { cleanTitle, splitArtists } = await import('@shared/utils/text');
+    expect(cleanTitle('La Vie en Rose - En Concert')).toBe('La Vie en Rose');
+    expect(cleanTitle('Je te promets (Version acoustique)')).toBe('Je te promets');
+    expect(splitArtists('Louane et Vianney')).toEqual(['louane', 'vianney']);
   });
 });

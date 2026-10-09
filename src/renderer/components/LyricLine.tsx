@@ -38,7 +38,7 @@ export const LyricLine = memo(function LyricLine({ text, translation, language, 
   return (
     <div className="line" data-state={state} data-dir={direction}>
       <div className="line__primary">
-        <TappableText text={primary} line={text} translation={translation} tap={lineTap} />
+        <TappableText text={primary} line={text} translation={translation} language={language} tap={lineTap} />
       </div>
       {secondary && <div className="line__secondary">{secondary}</div>}
       {!secondary && pending && state === 'active' && mode === 'both' && (

@@ -1,3 +1,4 @@
+import type { SourceLanguageCode } from '@shared/types/domain';
 import type { DefinitionSource, WordSense } from '@shared/types/library';
 
 export interface DictionaryLookup {
@@ -6,7 +7,7 @@ export interface DictionaryLookup {
 }
 
 /**
- * A source of word definitions (Spanish → English glosses). Implementations return null when
+ * A source of word definitions (foreign word → English glosses). Implementations return null when
  * the word is unknown and throw ProviderError for network/API problems.
  */
 export interface DictionaryProvider {
@@ -14,5 +15,5 @@ export interface DictionaryProvider {
   readonly displayName: string;
   /** How definitions from this provider are labelled in the UI. */
   readonly source: Exclude<DefinitionSource, 'machine'>;
-  lookup(word: string, signal?: AbortSignal): Promise<DictionaryLookup | null>;
+  lookup(word: string, language: SourceLanguageCode, signal?: AbortSignal): Promise<DictionaryLookup | null>;
 }

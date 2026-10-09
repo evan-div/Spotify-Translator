@@ -1,12 +1,13 @@
 /**
  * DEMO / DEVELOPMENT DATA ONLY. Short glosses written for this project, covering the demo lyrics.
  */
+import type { SourceLanguageCode } from '@shared/types/domain';
 import type { WordSense } from '@shared/types/library';
 import type { DictionaryLookup, DictionaryProvider } from '../dictionary/DictionaryProvider';
 
 type Entry = [partOfSpeech: string, ...meanings: string[]];
 
-const E: Record<string, Entry> = {
+const ES: Record<string, Entry> = {
   luces: ['Noun', 'lights', 'plural of luz'],
   ciudad: ['Noun', 'city', 'town'],
   nombre: ['Noun', 'name'],
@@ -70,6 +71,32 @@ const E: Record<string, Entry> = {
   miedo: ['Noun', 'fear'],
 };
 
+const FR: Record<string, Entry> = {
+  lumières: ['Noun', 'lights', 'plural of lumière'],
+  lumière: ['Noun', 'light'],
+  ville: ['Noun', 'city', 'town'],
+  allument: ['Verb', 'third-person plural present indicative of allumer'],
+  allumer: ['Verb', 'to light', 'to switch on'],
+  prénom: ['Noun', 'first name', 'given name'],
+  revient: ['Verb', 'third-person singular present indicative of revenir'],
+  revenir: ['Verb', 'to come back', 'to return'],
+  silence: ['Noun', 'silence'],
+  sais: ['Verb', 'first-person singular present indicative of savoir'],
+  savoir: ['Verb', 'to know (a fact)', 'to know how to'],
+  faire: ['Verb', 'to do', 'to make'],
+  vide: ['Noun', 'emptiness', 'void', 'gap'],
+  encore: ['Adverb', 'again', 'still', 'yet'],
+  même: ['Adverb', 'even'],
+  parti: ['Verb', 'past participle of partir'],
+  partir: ['Verb', 'to leave', 'to depart'],
+  aime: ['Verb', 'first-person singular present indicative of aimer'],
+  aimer: ['Verb', 'to love', 'to like'],
+  reviens: ['Verb', 'first-person singular present indicative of revenir'],
+  là: ['Adverb', 'there', 'here'],
+};
+
+const TABLES: Record<SourceLanguageCode, Record<string, Entry>> = { es: ES, fr: FR };
+
 const senseOf = ([partOfSpeech, ...meanings]: Entry): WordSense => ({ partOfSpeech, meanings });
 
 export class DemoDictionaryProvider implements DictionaryProvider {
@@ -77,9 +104,9 @@ export class DemoDictionaryProvider implements DictionaryProvider {
   readonly displayName = 'Demo dictionary';
   readonly source = 'demo' as const;
 
-  async lookup(word: string): Promise<DictionaryLookup | null> {
+  async lookup(word: string, language: SourceLanguageCode): Promise<DictionaryLookup | null> {
     await new Promise((resolve) => setTimeout(resolve, 250)); // make the loading state visible
-    const entry = E[word];
+    const entry = TABLES[language][word];
     return entry ? { senses: [senseOf(entry)], sourceUrl: null } : null;
   }
 }

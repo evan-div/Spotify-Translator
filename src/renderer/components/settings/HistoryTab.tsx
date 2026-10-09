@@ -8,6 +8,7 @@ import { Group, Segmented } from './controls';
 
 const LANGUAGE_LABEL: Record<HistoryEntry['language'], string> = {
   spanish: 'Spanish',
+  french: 'French',
   english: 'English',
   mixed: 'Mixed',
   other: 'Other',

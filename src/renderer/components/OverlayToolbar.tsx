@@ -1,4 +1,6 @@
 import { OVERLAY_LIMITS } from '@shared/constants/defaults';
+import { LANGUAGE_BADGE, LANGUAGE_NAMES } from '@shared/constants/languages';
+import type { SourceLanguageCode } from '@shared/types/domain';
 import type { DisplayMode, OverlaySettings } from '@shared/types/settings';
 import { Icon } from './Icon';
 
@@ -9,18 +11,23 @@ interface Props {
   /** null = nothing favouritable is playing. */
   favorite: boolean | null;
   onToggleFavorite: () => void;
+  /** Language of the current lyrics, for the Original/English badge. */
+  sourceLanguage: SourceLanguageCode | null;
 }
 
 const MODE_ORDER: DisplayMode[] = ['both', 'translation', 'original'];
-const MODE_LABEL: Record<DisplayMode, string> = { both: 'ES + EN', translation: 'EN', original: 'ES' };
-const MODE_TITLE: Record<DisplayMode, string> = {
-  both: 'Showing Spanish and English',
-  translation: 'Showing English only',
-  original: 'Showing Spanish only',
-};
+const modeLabel = (mode: DisplayMode, source: SourceLanguageCode): string =>
+  mode === 'both' ? `${LANGUAGE_BADGE[source]} + EN` : mode === 'translation' ? 'EN' : LANGUAGE_BADGE[source];
+const modeTitle = (mode: DisplayMode, source: SourceLanguageCode): string =>
+  mode === 'both'
+    ? `Showing ${LANGUAGE_NAMES[source]} and English`
+    : mode === 'translation'
+      ? 'Showing English only'
+      : `Showing ${LANGUAGE_NAMES[source]} only`;
 
 /** Hover-revealed controls. Deliberately not a player: no play/skip/volume. */
-export function OverlayToolbar({ overlay, onPatch, onOpenSettings, favorite, onToggleFavorite }: Props) {
+export function OverlayToolbar({ overlay, onPatch, onOpenSettings, favorite, onToggleFavorite, sourceLanguage }: Props) {
+  const source = sourceLanguage ?? 'es';
   const nextMode = MODE_ORDER[(MODE_ORDER.indexOf(overlay.displayMode) + 1) % MODE_ORDER.length] ?? 'both';
   const font = (delta: number) =>
     onPatch({ fontSize: Math.min(OVERLAY_LIMITS.fontMax, Math.max(OVERLAY_LIMITS.fontMin, overlay.fontSize + delta)) });
@@ -34,8 +41,8 @@ export function OverlayToolbar({ overlay, onPatch, onOpenSettings, favorite, onT
         A<small>+</small>
       </button>
       <span className="toolbar__sep" />
-      <button type="button" title={`${MODE_TITLE[overlay.displayMode]} (click to change)`} onClick={() => onPatch({ displayMode: nextMode })} className="tool tool--label">
-        {MODE_LABEL[overlay.displayMode]}
+      <button type="button" title={`${modeTitle(overlay.displayMode, source)} (click to change)`} onClick={() => onPatch({ displayMode: nextMode })} className="tool tool--label">
+        {modeLabel(overlay.displayMode, source)}
       </button>
       <button type="button" title={overlay.compact ? 'Expand' : 'Compact mode'} aria-pressed={overlay.compact} onClick={() => onPatch({ compact: !overlay.compact })} className="tool">
         <Icon name="compact" />

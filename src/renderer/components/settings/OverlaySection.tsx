@@ -33,7 +33,7 @@ export function OverlaySection() {
             options={[
               { value: 'both', label: 'Both' },
               { value: 'translation', label: 'English' },
-              { value: 'original', label: 'Spanish' },
+              { value: 'original', label: 'Original' },
             ]}
             onChange={(displayMode) => patch({ displayMode })}
           />
@@ -62,7 +62,7 @@ export function OverlaySection() {
         <Row label="Click-through" hint={`Mouse clicks pass through to the app underneath. Turn off from the menu bar or with ${formatAccelerator(shortcuts.toggleClickThrough, isMac)}.`}>
           <Toggle label="Click-through" checked={overlay.clickThrough} onChange={(clickThrough) => patch({ clickThrough })} />
         </Row>
-        <Row label="Tap words for definitions" hint="Click a Spanish word in the overlay to see what it means and save it.">
+        <Row label="Tap words for definitions" hint="Click a word in the overlay to see what it means and save it.">
           <Toggle label="Tap words for definitions" checked={overlay.tapWords} onChange={(tapWords) => patch({ tapWords })} />
         </Row>
         <Row label="Remember listening history" hint="Keeps a list of songs on this Mac so you can revisit them and mark favorites.">

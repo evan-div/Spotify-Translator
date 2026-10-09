@@ -40,6 +40,9 @@ export function normalizeWord(raw: string): string | null {
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 
+/** Vocabulary entry id: one per word per language ("es:querer"). */
+export const vocabularyId = (language: string, word: string): string => `${language}:${word}`;
+
 /** Dictionary definitions arrive as HTML; reduce to plain text safe to render. */
 export function htmlToText(html: string): string {
   return html

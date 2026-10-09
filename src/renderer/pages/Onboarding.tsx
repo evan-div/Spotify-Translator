@@ -60,7 +60,7 @@ export function Onboarding() {
       <Step index={4} title="Start listening">
         <div className="row">
           <div className="row__label">
-            <div>Play a Spanish song in Spotify</div>
+            <div>Play a Spanish or French song in Spotify</div>
             <div className="row__hint">The overlay lives in your menu bar and follows along automatically.</div>
           </div>
           <div className="row__control">

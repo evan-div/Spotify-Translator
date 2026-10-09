@@ -37,6 +37,12 @@ const VERSION_KEYWORDS = [
   'from',
   'soundtrack',
   'original motion picture',
+  'en concert',
+  'en direct',
+  'remasterisé',
+  'remasterisée',
+  'acoustique',
+  'édition',
 ];
 
 const KEYWORD_SOURCE = VERSION_KEYWORDS.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
@@ -96,7 +102,7 @@ export function titleVariants(raw: string): string[] {
   return variants.filter((v, i) => v.length > 0 && variants.indexOf(v) === i);
 }
 
-const ARTIST_SPLIT_RE = /\s*(?:,|;|\/|&|\bfeat\.?\b|\bft\.?\b|\bfeaturing\b|\bwith\b|\by\b|\band\b|\bx\b)\s*/iu;
+const ARTIST_SPLIT_RE = /\s*(?:,|;|\/|&|\bfeat\.?\b|\bft\.?\b|\bfeaturing\b|\bwith\b|\by\b|\band\b|\bet\b|\bx\b)\s*/iu;
 
 /** Splits a combined artist string ("A, B feat. C") into individual normalised names. */
 export function splitArtists(combined: string): string[] {

@@ -1,9 +1,9 @@
-import type { TargetLanguage } from '@shared/types/domain';
+import type { SourceLanguageCode, TargetLanguage } from '@shared/types/domain';
 import type { TranslationProviderId } from '@shared/types/settings';
 
 export interface TranslateOptions {
-  /** ISO 639-1 source code, or null to let the provider detect it. */
-  source: string | null;
+  /** Source language, or null to let the provider detect it. */
+  source: SourceLanguageCode | null;
   target: TargetLanguage;
   /** Song metadata, useful context for LLM-based providers. */
   context?: { title: string; artist: string };

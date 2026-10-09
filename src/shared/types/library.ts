@@ -1,4 +1,4 @@
-import type { LyricsLanguage } from './domain';
+import type { LyricsLanguage, SourceLanguageCode } from './domain';
 
 /* ---------------- Dictionary ---------------- */
 
@@ -15,6 +15,7 @@ export type DefinitionSource = 'wiktionary' | 'machine' | 'demo';
 export interface WordDefinition {
   /** The word as normalised for lookup (lowercase, no punctuation). */
   word: string;
+  language: SourceLanguageCode;
   /** Dictionary form when the tapped word is an inflection (quiero → querer). */
   lemma: string | null;
   /** e.g. "first-person singular present indicative of querer". */
@@ -25,6 +26,8 @@ export interface WordDefinition {
 }
 
 export interface WordContextInput {
+  /** Language the word is in; decides which dictionary section is read. */
+  language: SourceLanguageCode;
   /** The original lyric line the word was tapped in. */
   line: string;
   /** Its translation, when there is one. */
@@ -45,9 +48,10 @@ export interface WordContext extends WordContextInput {
 }
 
 export interface VocabularyEntry {
-  /** Same as the normalised word: one entry per word. */
+  /** `${language}:${word}`: one entry per word per language. */
   id: string;
   word: string;
+  language: SourceLanguageCode;
   lemma: string | null;
   partOfSpeech: string | null;
   /** Short gloss for lists, e.g. "to want; to love". */

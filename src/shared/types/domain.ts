@@ -74,14 +74,19 @@ export interface TrackQuery {
 /* Language + translation                                             */
 /* ------------------------------------------------------------------ */
 
-export type LyricsLanguage = 'spanish' | 'english' | 'mixed' | 'other' | 'unknown';
-export type LineLanguage = 'es' | 'en' | 'other' | 'unknown';
+/** Languages that can be translated into the target language. Add a code here to support another. */
+export type SourceLanguageCode = 'es' | 'fr';
+
+export type LyricsLanguage = 'spanish' | 'french' | 'english' | 'mixed' | 'other' | 'unknown';
+export type LineLanguage = SourceLanguageCode | 'en' | 'other' | 'unknown';
 
 export interface LanguageAnalysis {
   language: LyricsLanguage;
   lineLanguages: LineLanguage[];
-  /** Share (0..1) of classified lines that are Spanish. */
-  spanishShare: number;
+  /** Share (0..1) of classified lines that are in a translatable source language (Spanish/French). */
+  foreignShare: number;
+  /** The dominant translatable language, or null when there is none. */
+  sourceLanguage: SourceLanguageCode | null;
 }
 
 export type TargetLanguage = 'en';
@@ -136,6 +141,8 @@ export interface LyricsView {
   artist: string;
   synced: boolean;
   language: LyricsLanguage;
+  /** Dominant translatable language, used for word lookup and labels. */
+  sourceLanguage: SourceLanguageCode | null;
   translationStatus: TranslationStatus;
   /** Short user facing explanation for non-happy paths. */
   note: string | null;

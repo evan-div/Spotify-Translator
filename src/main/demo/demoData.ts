@@ -53,6 +53,18 @@ const luces: DemoLine[] = [
   { at: 97000, text: 'Todavía te quiero', en: 'I still love you' },
 ];
 
+const lumieres: DemoLine[] = [
+  { at: 3000, text: "Les lumières de la ville s'allument", en: 'The city lights are coming on' },
+  { at: 8500, text: 'et ton prénom me revient en silence', en: 'and your first name comes back to me in silence' },
+  { at: 14000, text: 'Je ne sais pas quoi faire de tout ce vide', en: "I don't know what to do with all this emptiness" },
+  { at: 19500, text: "si tu n'es plus là", en: "if you're no longer here" },
+  { at: 25000, text: '' },
+  { at: 29000, text: "Je t'aime encore", en: 'I still love you' },
+  { at: 33500, text: 'même si tu es parti', en: "even though you've gone" },
+  { at: 38000, text: "Je t'aime encore", en: 'I still love you' },
+  { at: 42500, text: 'même si tu ne reviens pas', en: "even if you never come back" },
+];
+
 const tides: DemoLine[] = [
   { at: 3000, text: 'Streetlights hum a quiet tune' },
   { at: 8000, text: "and I'm walking with the tide" },
@@ -113,6 +125,12 @@ export const DEMO_ENTRIES: DemoEntry[] = [
   },
   {
     mediaType: 'track',
+    track: track('demo-french-synced', 'Lumières de Minuit', ['Marée Douce'], 'Ville Endormie', 50_000, ['#4776e6', '#8e54e9']),
+    lyrics: lumieres,
+    durationMs: 50_000,
+  },
+  {
+    mediaType: 'track',
     track: track('demo-no-lyrics', 'Interludio Instrumental', ['Orquesta del Faro'], 'Marejada', 45_000, ['#485563', '#29323c']),
     lyrics: null,
     durationMs: 45_000,
@@ -137,5 +155,5 @@ export const DEMO_ENTRIES: DemoEntry[] = [
 
 /** Line text → English, for the demo translation provider. */
 export const DEMO_TRANSLATIONS: ReadonlyMap<string, string> = new Map(
-  [luces, girasoles, baila].flatMap((song) => song.flatMap((l) => (l.en ? [[l.text, l.en] as const] : []))),
+  [luces, girasoles, baila, lumieres].flatMap((song) => song.flatMap((l) => (l.en ? [[l.text, l.en] as const] : []))),
 );

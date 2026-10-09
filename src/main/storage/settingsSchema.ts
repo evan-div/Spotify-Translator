@@ -78,7 +78,7 @@ export function parseSettingsPatch(input: unknown): SettingsPatch {
     const t = input.translation;
     patch.translation = definedOnly({
       provider: oneOf<TranslationProviderId>(t.provider, ['none', 'deepl', 'google', 'openai']),
-      sourceLanguage: oneOf<SourceLanguageSetting>(t.sourceLanguage, ['auto', 'es']),
+      sourceLanguage: oneOf<SourceLanguageSetting>(t.sourceLanguage, ['auto', 'es', 'fr']),
       targetLanguage: oneOf(t.targetLanguage, ['en'] as const),
       model: str(t.model, 100)?.trim(),
       baseUrl: str(t.baseUrl, 300)?.trim(),

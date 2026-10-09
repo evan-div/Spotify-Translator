@@ -1,3 +1,4 @@
+import { LANGUAGE_NAMES } from '@shared/constants/languages';
 import { ProviderError } from '@shared/types/domain';
 import { httpJson } from '../net/http';
 import { chunk, type DetectedLanguage, type TranslateOptions, type TranslationProvider } from './TranslationProvider';
@@ -93,7 +94,7 @@ export class OpenAiCompatibleProvider implements TranslationProvider {
     });
     const answer = await this.chat(
       [
-        { role: 'system', content: LYRICS_SYSTEM_PROMPT(target, options.source === 'es' ? 'Spanish' : 'the source language') },
+        { role: 'system', content: LYRICS_SYSTEM_PROMPT(target, options.source ? LANGUAGE_NAMES[options.source] : 'its source language (Spanish or French)') },
         { role: 'user', content: user },
       ],
       { signal: options.signal, json: true },

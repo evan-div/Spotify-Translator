@@ -1,4 +1,5 @@
-import { ProviderError } from '@shared/types/domain';
+import { languageName } from '@shared/constants/languages';
+import { ProviderError, type SourceLanguageCode } from '@shared/types/domain';
 import type { WordSense } from '@shared/types/library';
 import { htmlToText } from '@shared/utils/words';
 import { httpJson } from '../net/http';
@@ -16,9 +17,9 @@ const USER_AGENT = 'LyricLens/0.1.0 (https://github.com/evan-div/Spotify-Transla
 const MAX_SENSES_PER_ENTRY = 4;
 const MAX_MEANING_LENGTH = 140;
 
-/** Parses the Spanish section of a Wiktionary response into senses. Exported for tests. */
-export function parseWiktionary(response: WiktionaryResponse): WordSense[] {
-  const entries = response.es ?? [];
+/** Parses one language's section (keyed by ISO code) of a Wiktionary response. Exported for tests. */
+export function parseWiktionary(response: WiktionaryResponse, language: SourceLanguageCode = 'es'): WordSense[] {
+  const entries = response[language] ?? [];
   const senses: WordSense[] = [];
   for (const entry of entries) {
     const meanings = (entry.definitions ?? [])
@@ -44,7 +45,7 @@ export class WiktionaryProvider implements DictionaryProvider {
 
   constructor(private readonly fetchImpl?: typeof fetch) {}
 
-  async lookup(word: string, signal?: AbortSignal): Promise<DictionaryLookup | null> {
+  async lookup(word: string, language: SourceLanguageCode, signal?: AbortSignal): Promise<DictionaryLookup | null> {
     // Wiktionary titles are case-sensitive: try lowercase, then Capitalised (proper nouns).
     const candidates = [word, word.charAt(0).toUpperCase() + word.slice(1)].filter((w, i, all) => all.indexOf(w) === i);
     for (const candidate of candidates) {
@@ -55,9 +56,9 @@ export class WiktionaryProvider implements DictionaryProvider {
           signal,
           fetchImpl: this.fetchImpl,
         });
-        const senses = parseWiktionary(response);
+        const senses = parseWiktionary(response, language);
         if (senses.length > 0) {
-          return { senses, sourceUrl: `https://en.wiktionary.org/wiki/${encodeURIComponent(candidate)}#Spanish` };
+          return { senses, sourceUrl: `https://en.wiktionary.org/wiki/${encodeURIComponent(candidate)}#${languageName(language)}` };
         }
       } catch (error) {
         if (error instanceof ProviderError && error.code === 'not-found') continue;

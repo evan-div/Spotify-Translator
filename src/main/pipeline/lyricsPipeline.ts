@@ -84,11 +84,11 @@ export class LyricsPipeline {
       const { lyrics } = lookup;
 
       // 3. Language.
-      const forceSpanish = settings.translation.sourceLanguage === 'es';
+      const forced = settings.translation.sourceLanguage === 'auto' ? null : settings.translation.sourceLanguage;
       const analysis = analyzeLyrics(lyrics.lines);
-      log.info(`Language: ${analysis.language} (${Math.round(analysis.spanishShare * 100)}% Spanish lines)`);
+      log.info(`Language: ${analysis.language} (${Math.round(analysis.foreignShare * 100)}% ${analysis.sourceLanguage ?? 'foreign'} lines)`);
 
-      if (!needsTranslation(analysis, forceSpanish)) {
+      if (!needsTranslation(analysis, forced)) {
         const status = analysis.language === 'other' ? 'unsupported-language' : 'not-needed';
         deps.emit({ status: 'ready', trackKey: track.key, view: viewFromLyrics(lyrics, analysis, status, lookup.fromCache) });
         return 'ready';
@@ -111,7 +111,7 @@ export class LyricsPipeline {
       });
 
       try {
-        const translation = await translateLyrics({ track: query, lyrics, analysis, forceSpanish, target, provider, signal });
+        const translation = await translateLyrics({ track: query, lyrics, analysis, forced, target, provider, signal });
         if (cancelled()) return 'cancelled';
         deps.translations.put(translation.cacheKey, translation);
         log.info(`Translated and cached (${translation.cacheKey}, hash ${hashLyrics(lyrics.lines).slice(0, 8)})`);

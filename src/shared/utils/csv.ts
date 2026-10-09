@@ -4,11 +4,12 @@ const escapeCell = (value: string): string => (/[",\n\r]/.test(value) ? `"${valu
 
 /** Vocabulary as CSV (UTF-8, header row), ready to import into Anki, Quizlet or a spreadsheet. */
 export function vocabularyToCsv(entries: readonly VocabularyEntry[]): string {
-  const header = ['word', 'dictionary_form', 'part_of_speech', 'meaning', 'example', 'example_translation', 'song', 'artist', 'saved_at'];
+  const header = ['word', 'language', 'dictionary_form', 'part_of_speech', 'meaning', 'example', 'example_translation', 'song', 'artist', 'saved_at'];
   const rows = entries.map((e) => {
     const context = e.contexts[0];
     return [
       e.word,
+      e.language,
       e.lemma ?? '',
       e.partOfSpeech ?? '',
       e.meaning,

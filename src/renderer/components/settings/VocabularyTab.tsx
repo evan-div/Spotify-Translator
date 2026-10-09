@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { VocabularyEntry } from '@shared/types/library';
 import { formatRelativeTime, vocabularyToCsv } from '@shared/utils/csv';
+import { LANGUAGE_BADGE } from '@shared/constants/languages';
 import { Icon } from '../Icon';
 import { useAppSelector } from '../../hooks/useAppState';
 import { Button, Group } from './controls';
@@ -15,7 +16,7 @@ function download(filename: string, text: string): void {
 }
 
 const matches = (entry: VocabularyEntry, query: string): boolean =>
-  [entry.word, entry.lemma ?? '', entry.meaning].some((field) => field.toLowerCase().includes(query));
+  [entry.word, entry.lemma ?? '', entry.meaning, entry.language].some((field) => field.toLowerCase().includes(query));
 
 function WordRow({ entry }: { entry: VocabularyEntry }) {
   const context = entry.contexts[0];
@@ -26,6 +27,7 @@ function WordRow({ entry }: { entry: VocabularyEntry }) {
           {entry.word}
           {entry.lemma && <span className="item__lemma"> → {entry.lemma}</span>}
           {entry.partOfSpeech && <span className="chip">{entry.partOfSpeech}</span>}
+          <span className="chip">{LANGUAGE_BADGE[entry.language]}</span>
         </div>
         <div className="item__meaning">
           {entry.meaning || <span className="text-faint">No definition saved</span>}
@@ -61,7 +63,7 @@ export function VocabularyTab() {
       <div className="tab-empty">
         <div className="tab-empty__icon"><Icon name="book" size={22} /></div>
         <h2>No saved words yet</h2>
-        <p>While a song plays, tap any Spanish word in the overlay to see what it means, then tap the star to save it here.</p>
+        <p>While a song plays, tap any word in the overlay to see what it means, then tap the star to save it here.</p>
       </div>
     );
   }

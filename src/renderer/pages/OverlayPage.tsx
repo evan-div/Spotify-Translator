@@ -50,8 +50,8 @@ export function OverlayPage() {
   const savedWords = useMemo(() => new Set(library.vocabulary.map((v) => v.id)), [library.vocabulary]);
   const canTap = overlay.tapWords && !overlay.clickThrough && view !== null && view.language !== 'english';
   const tap = useMemo<TapConfig | null>(
-    () => (canTap ? { saved: savedWords, onTap: openWord } : null),
-    [canTap, savedWords, openWord],
+    () => (canTap ? { saved: savedWords, fallbackLanguage: view?.sourceLanguage ?? 'es', onTap: openWord } : null),
+    [canTap, savedWords, openWord, view?.sourceLanguage],
   );
   const favorite = track ? (library.history.find((h) => h.trackKey === track.key)?.favorite ?? false) : null;
   const toggleFavorite = useCallback(() => {
@@ -60,7 +60,7 @@ export function OverlayPage() {
   const toggleSaved = useCallback(() => {
     if (!lookup) return;
     if (savedWords.has(lookup.id)) void window.lyricLens.library.removeWord(lookup.id);
-    else void window.lyricLens.library.saveWord({ word: lookup.word, line: lookup.line, translation: lookup.translation });
+    else void window.lyricLens.library.saveWord({ word: lookup.word, line: lookup.line, translation: lookup.translation, language: lookup.language });
   }, [lookup, savedWords]);
   // Clicking empty space dismisses the card; words, the card and the toolbar handle their own clicks.
   const onPanelClick = useCallback(
@@ -86,7 +86,7 @@ export function OverlayPage() {
       {artwork && <div className="panel__art" style={{ backgroundImage: `url("${artwork}")` }} />}
       <header className="panel__header">
         {overlay.compact ? <div className="meta" /> : <TrackHeader track={track} status={headerStatus} favorite={favorite === true} />}
-        {!overlay.clickThrough && <OverlayToolbar overlay={overlay} onPatch={patch} onOpenSettings={openSettings} favorite={favorite} onToggleFavorite={toggleFavorite} />}
+        {!overlay.clickThrough && <OverlayToolbar overlay={overlay} onPatch={patch} onOpenSettings={openSettings} favorite={favorite} onToggleFavorite={toggleFavorite} sourceLanguage={view?.sourceLanguage ?? null} />}
       </header>
       <main className="panel__body">
         <Body content={content} overlay={overlay} activeIndex={sync.activeIndex} track={track} onAction={onAction} tap={tap} />

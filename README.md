@@ -1,6 +1,6 @@
 # Lyric Lens
 
-**Desktop subtitles for Spotify.** Lyric Lens watches what you're playing in Spotify, fetches the lyrics, translates Spanish into natural English, and shows both in a small, translucent, always-on-top overlay that follows the song line by line.
+**Desktop subtitles for Spotify.** Lyric Lens watches what you're playing in Spotify, fetches the lyrics, translates Spanish or French into natural English, and shows both in a small, translucent, always-on-top overlay that follows the song line by line.
 
 > Translate your Spotify lyrics while you listen.
 
@@ -26,11 +26,11 @@ Captured from demo mode (`npm run dev:demo`) on Linux, so macOS vibrancy blur is
 
 - Detects the current Spotify track (title, artists, album, artwork, progress) via the official Web API.
 - Retrieves synced (timestamped) lyrics from [LRCLIB](https://lrclib.net); falls back to plain lyrics.
-- Detects Spanish, English, mixed and other-language songs locally (offline); translates only the lines that need it.
+- Detects Spanish, French, English, mixed and other-language songs locally (offline); translates only the lines that need it. Mixed songs keep their English lines as they are.
 - Translation providers behind an interface: **DeepL**, **Google Cloud Translation**, or any **OpenAI-compatible** LLM endpoint.
 - Caches translations and lyrics on disk: replaying a song never re-translates.
 - Floating overlay: always on top (even over full-screen apps), draggable, resizable, adjustable opacity and font size, light/dark/system theme, compact mode, lock position, click-through, optional blurred album-art backdrop.
-- **Tap a word** in the overlay for its meaning (dictionary form for conjugations, e.g. *quiero → querer*), and **save it to your vocabulary** with a star. Export the list as CSV for Anki, Quizlet or a spreadsheet.
+- **Tap a word** in the overlay for its meaning (dictionary form for conjugations, e.g. *quiero → querer*, *aime → aimer*), and **save it to your vocabulary** with a star. Export the list as CSV for Anki, Quizlet or a spreadsheet.
 - **History & favorites:** every song you've read lyrics for is remembered on your Mac. Reopen its lyrics and translation any time, favorite songs with the ★ in the overlay, and clear history without losing favorites.
 - Menu bar app with global shortcuts; no Dock icon.
 - **Demo mode** with simulated playback, lyrics and translations, so you can try everything with no accounts.
@@ -195,10 +195,10 @@ Key design points:
 
 - Developed and tested in a Linux sandbox (real Electron under Xvfb, unit tests, demo mode). **macOS-specific visuals (vibrancy, rounded corners, tray template icon, full-screen overlay behaviour) and the live Spotify / DeepL / Google / OpenAI calls have not been verified against real services.** Expect small fixes on first real-world use.
 - Spotify's Web API reports progress with a few hundred ms of jitter; use **Settings → Lyric timing** to nudge if lyrics feel early or late.
-- Word definitions come from [Wiktionary](https://en.wiktionary.org)'s REST API (free, no key; content is CC BY-SA). Slang, names and some conjugations may be missing; if you've configured a translation provider, those words fall back to a short machine translation clearly marked *approximate*. The Wiktionary integration was built against its documented response format and tested with stubbed responses, but not against the live service.
+- Word definitions come from [Wiktionary](https://en.wiktionary.org)'s REST API (free, no key; content is CC BY-SA). Slang, names and some conjugations may be missing, and French lookups have only been exercised with stubbed responses; if you've configured a translation provider, those words fall back to a short machine translation clearly marked *approximate*. The Wiktionary integration was built against its documented response format and tested with stubbed responses, but not against the live service.
 - Lyrics coverage depends on LRCLIB. Some songs will have no lyrics or only unsynced lyrics.
-- Only Spanish → English is translated in the MVP (the code is structured for more languages: see `TARGET_LANGUAGES`, `SOURCE_LANGUAGES` and the provider `TranslateOptions`). Portuguese and French are detected so they aren't mis-translated as Spanish, but they are shown untranslated.
-- Language detection is heuristic; a song with very few recognisable words may be classed "unknown". Use **Source language → Spanish** in Settings to force translation.
+- Spanish → English and French → English are translated. Portuguese is detected so it isn't mistaken for Spanish, but is shown untranslated. To add another source language: add its code to `SourceLanguageCode` and `SOURCE_LANGUAGE_CODES`, give it a marker vocabulary in `src/shared/utils/language.ts`, and add its name to `LANGUAGE_NAMES` (providers, the dictionary and the UI are driven by those).
+- Language detection is heuristic; a song with very few recognisable words may be classed "unknown". Use **Source language** in Settings (Auto / Spanish / French) to pin the language and force translation.
 - The Spotify Web API does not expose lyrics; this app deliberately never touches Spotify's own lyrics UI.
 
 ## API / licensing considerations
